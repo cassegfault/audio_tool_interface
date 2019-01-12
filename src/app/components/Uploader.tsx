@@ -53,7 +53,7 @@ export class Uploader extends React.Component<object, UploaderState> {
             d.append(`file${i}`, file);
         }
         console.log(d);
-        Requests.post("http://localhost:9090/decode",d, { responseType: "arraybuffer" }).then((arrayBuffer: any)=>{
+        Requests.post("http://localhost:9095/decode",d, { responseType: "arraybuffer" }).then((arrayBuffer: any)=>{
             this.state.ctx.decodeAudioData(arrayBuffer, this.initAudio.bind(this));
         }).catch((xhr)=>{
             console.error("Couldn't reach API", xhr);

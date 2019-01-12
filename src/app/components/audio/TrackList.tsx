@@ -1,19 +1,19 @@
 import * as React from "react";
-import Track from "./Track";
-import { audioInterface } from "lib/AudioInterface";
+import { audioInterface, AudioTrack } from "lib/AudioInterface";
+import { Proxied } from "lib/common";
+import TrackControls from "./TrackControls";
 
-export default class TrackList extends React.Component<{ tracks: any[], editorInfo: any}> {
+export default class TrackList extends React.Component<{ tracks: Proxied<AudioTrack>[], editorInfo: any}> {
     constructor(props){
         super(props);
     }
 
     render() {
-        console.log("Tracks Render");
-        var tracks = this.props.tracks.map((track)=>{
-            return (<Track key={track.id} track={track} editorInfo={this.props.editorInfo} />)
+        var tracks = this.props.tracks.map((track: Proxied<AudioTrack>)=>{
+            return (<TrackControls key={track.id} track={track} editorInfo={this.props.editorInfo} />)
         })
-        return (<div>
-            {tracks}
-        </div>)
+        return (<div className="track-list">
+                    {tracks}
+                </div>);
     }
 }

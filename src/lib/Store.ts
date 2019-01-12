@@ -54,10 +54,6 @@ export default class Store<StoreType extends object> {
     public proxy_by_path(path: string[]) {
         var proxy_set = (state, key, value) => {
             // Only mutate state when permissible, always notify of changes
-            if(key === "length"){
-                return true;
-            }
-
             if (this.is_mutating) {
                 this.currentHistoryBatch.push({
                     stateData: deepCopy(state),
@@ -75,14 +71,25 @@ export default class Store<StoreType extends object> {
             return true;
         };
         var proxy_get = (target, property, receiver) => {
-            if (property === '__store_path__'){
+            if (property === '__store_path__') {
                 return path.join('.');
             }
-            return Reflect.get(target, property, receiver);
+            switch(property){
+                case '__store_path__':
+                    return path.join('.');
+                    break;
+                case 'set_property':
+                    return (value_object: object) => {
+                        this.dispatch('set_property', { value_object, path });
+                    }
+                    break;
+                default:
+                    return Reflect.get(target, property, receiver);
+                    break;
+            }
         };
         return new Proxy(this.get_object_by_path(path), {
             get: proxy_get,
-            
             set: proxy_set
         })
     }

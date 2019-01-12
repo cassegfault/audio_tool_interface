@@ -3,6 +3,8 @@ import { AudioFile } from "lib/common";
 import { warn } from "utils/console";
 import { AudioTrack, AudioClip } from "lib/AudioInterface";
 import { make_guid } from "utils/helpers";
+import { ColorBlindFriendly } from "static_data/colors";
+import { Proxied } from "lib/common";
 export default <MutationsMap>{
     addFile({state, payload}){
         // Check payload here
@@ -30,20 +32,28 @@ export default <MutationsMap>{
         foundFile.file.name = name;
     },
     newTrack({state }) {
-        state.tracks.push(new AudioTrack(make_guid()));
+        var colorIndex =  state.tracks.length % ColorBlindFriendly.length;
+        state.tracks.push(new AudioTrack(make_guid(), `Track ${state.tracks.length + 1}`, ColorBlindFriendly[colorIndex]));
     },
     addClipToTrack({ state, payload: { track_id, file_id} }) {
-        var foundTrack:AudioTrack = state.tracks.find((file:AudioFile) => file.id === track_id);
+        var foundTrack:AudioTrack = state.tracks.find((track:AudioTrack) => track.id === track_id);
         if(!foundTrack){
             return warn(`Could not find track: ${track_id}`);
         }
-        console.log(`adding clip from file ${file_id} to track ${track_id}`, track_id);
-        foundTrack.clips.push(new AudioClip(file_id));
+        foundTrack.clips.push(<Proxied<AudioClip>>(new AudioClip(file_id)));
     },
     set_window({ state, payload}) {
         Object.keys(payload).forEach((key)=>{
             state.editorInfo[key] = payload[key];
         });
-        console.log('window set', state.editorInfo);
+    },
+    set_property({ state, payload: { value_object, path }}){
+        var current = state;
+        path.forEach((part) => {
+            current = current[part];
+        });
+        Object.keys(value_object).forEach((key)=>{
+            current[key] = value_object[key];
+        });
     }
 }

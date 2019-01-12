@@ -1,0 +1,49 @@
+.icon-button {
+    @button-background: #858585; 
+    //background-color: @button-background;
+    background: linear-gradient(to top, #646464, #6B6B6B 95%, #8C8C8C);
+    border-radius: 3px;
+    border:1px solid rgba(0,0,0,0.4);
+    cursor:pointer;
+    padding: 2px 4px;
+    font-size:16px;
+    text-shadow: 0px 1px 0px rgba(0, 0, 0, 0.6), 0 -1px 0px rgba(255,255,255,0.2);
+    &:active {
+        background: linear-gradient(to top, darken(#646464, 5%), darken(#6B6B6B, 5%) 95%, darken(#8C8C8C, 5%));
+    }
+    &:focus {
+        outline:none;
+    }
+}
+
+.icon-button-large {
+    .icon-button;
+    padding: 4px 8px;
+}
+.icon-button-compact {
+    .icon-button;
+    width: 16px;
+    height:16px;
+    font-size:10px;
+    padding: 1px;
+    font-size:14px;
+    &.active {
+        padding: 0;
+        border: 1px solid @brand-primary;
+    }
+}
+
+.multi-icon-button .multi-icon-button-item {
+    .icon-button-large;
+    border-left:none;
+    border-radius: 0px;
+    &:first-of-type{
+        border-top-left-radius: 3px;
+        border-bottom-left-radius: 3px;
+        border-left:1px solid rgba(0,0,0,0.4);
+    }
+    &:last-of-type{
+        border-top-right-radius: 3px;
+        border-bottom-right-radius: 3px;
+    }
+}

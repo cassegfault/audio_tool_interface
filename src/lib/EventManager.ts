@@ -38,10 +38,10 @@ export default class EventManager {
             return;
         }
         
-        debug(`Firing ${e} with ${this.queue.get(e).size}`);
+        debug(`Firing ${e} with ${this.queue.get(e).size}`, this.queue.get(e), ...args);
 
         this.queue.get(e).forEach((handle: EventHandle) => {
-            if (handle.check_func && handle.check_func(...args)) {
+            if (!handle.check_func || handle.check_func(...args)) {
                 handle.callback(...args);
             }
         });

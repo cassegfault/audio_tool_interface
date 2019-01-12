@@ -6,6 +6,7 @@ declare global {
 
 import store from "lib/store";
 import router from "./routes";
+require('styles/index.less');
 
 class PageRenderer extends React.Component {
     state: any = {

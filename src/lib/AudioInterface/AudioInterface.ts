@@ -1,9 +1,11 @@
 import { make_guid } from "utils/helpers";
+import { error } from "utils/console";
 import Store from "../Store";
 import audio_store, {AudioState} from "app/audio_store";
 import { AudioFile } from "../common"
 import AudioTrack from "./AudioTrack";
 import EditorInfo from "./EditorInfo";
+import Requests from "requests";
 declare global {
     interface Window { audioInterface: any; }
 }
@@ -11,6 +13,7 @@ declare global {
 class AudioInterface {
     //!- singleton logic
     private static _instance: AudioInterface = new AudioInterface();
+    private _audio_nodes: AudioBufferSourceNode[] = [];
     private constructor() {
         // Decide if we're creating an instance or not
         if(AudioInterface._instance) {
@@ -31,6 +34,10 @@ class AudioInterface {
     public get files(): AudioFile[] {
         return this.store.state.files;
     }
+
+    get_file_data(file_id: string){
+        return this.audioMap.get(file_id);
+    }
     
     public get tracks(): AudioTrack[] {
         debugger;
@@ -45,8 +52,27 @@ class AudioInterface {
     undo() {
         this.store.undo();
     }
+
     redo() {
         this.store.redo();
+    }
+
+    upload_with_dialog(){
+        return new Promise((resolve,reject) => {
+            var el = document.createElement("input");
+            el.type = "file";
+            el.onchange = () => {
+                var d = new FormData();
+                d.append(`file0`, el.files[0]);
+                Requests.post("http://localhost:9095/decode",d, { responseType: "arraybuffer" }).then((arrayBuffer: any)=>{
+                    audioInterface.loadFile(arrayBuffer, el.files[0]).then((files) => { resolve(); } );
+                }).catch((xhr) => {
+                    error("Couldn't reach API", xhr);
+                    reject();
+                });
+            }
+            el.click();
+        });
     }
 
     loadFile(buf: ArrayBuffer, file?: File) {
@@ -62,7 +88,8 @@ class AudioInterface {
                                 type: file.type,
                                 size: file.size,
                                 lastModified: file.lastModified,
-                                length: audioBuffer.length
+                                length: audioBuffer.length,
+                                sample_rate: audioBuffer.sampleRate
                             }
                         });
                     resolve(this.store.state.files)
@@ -82,8 +109,24 @@ class AudioInterface {
     }
 
     addTrack(){
-        var id = make_guid();
-        this.store.dispatch('newTrack', id);
+        this.store.dispatch('newTrack', {});
+    }
+
+    play(){
+        this.tracks.forEach((track)=>{
+            var track_gain = new GainNode(this.ctx);
+            track.clips.forEach((clip)=>{
+                var newNode = new AudioBufferSourceNode(this.ctx, {buffer:this.audioMap.get(clip.file_id)})
+                this._audio_nodes.push(newNode);
+                newNode.connect(track_gain);
+                newNode.start(this.ctx.currentTime + clip.start_position, 0, clip.length);
+            });
+            track_gain.connect(this.ctx.destination);
+        });
+    }
+    
+    stop(){
+        this._audio_nodes.forEach((node) => node.stop());
     }
 }
 

@@ -11,6 +11,9 @@ export default class StoreComponent<StoreType extends object, P = {}, S = {}> ex
         super(props);
         this._store = store;
     }
+    get store(){
+        return this._store;
+    }
 
     /** Observe a path or set of paths on the store and fire a callback when they change
      * @param to_watch Path or paths relative to the store to watch

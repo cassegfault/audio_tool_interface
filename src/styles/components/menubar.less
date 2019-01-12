@@ -1,0 +1,60 @@
+.menubar {
+    background-color:@app-background;
+    display:flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.menubar-menus,
+.menubar-title,
+.menubar-right {
+    flex-grow:1;
+    width:33.33%
+}
+.menubar-title {
+    text-align:center;
+}
+
+.menubar-menu-options,
+.menubar-menus {
+    margin:0;
+    padding:0;
+    list-style: none;
+    cursor:pointer;
+}
+
+.menubar-menu-container {
+    display:inline-block;
+    position: relative;
+    padding: 2px 5px;
+    cursor:pointer;
+    user-select: none;
+}
+
+.menubar-menu-options {
+    position: absolute;
+}
+
+.menubar-menu-container.hovered{
+    background-color:lighten(@app-background, 15%);
+}
+
+.menubar-menu-container.hovered .menubar-menu-options {
+    @options-background: lighten(@app-background,10%);
+    background-color: @options-background;
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    border: 1px solid rgba(0,0,0,0.4);
+    border-top: 1px solid @options-background;
+    top: 100%;
+    left:0;
+}
+.menubar-menu-option {
+    padding: 5px 10px;
+    white-space: nowrap;
+    min-width:200px;
+}
+.menubar-menu-option:hover {
+    background-color:rgba(255,255,255,0.1);
+}

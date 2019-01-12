@@ -17,5 +17,8 @@ export default <ActionsMap>{
     },
     set_window({commit, payload}) {
         commit('set_window', payload);
+    },
+    set_property({commit, payload}){
+        commit('set_property', payload);
     }
 };

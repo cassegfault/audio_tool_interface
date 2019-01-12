@@ -31,7 +31,8 @@ export default class Requests {
             xhr.onerror = () => {
                 reject(xhr);
             }
-            xhr.send(data);
+            
+            xhr.send(JSON.stringify(data));
         });
     }
 

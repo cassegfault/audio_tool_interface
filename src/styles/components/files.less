@@ -1,0 +1,48 @@
+.files-window {
+    min-width:300px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+    height:100%;
+    margin-left: -10px;
+    padding-left: 10px;
+}
+
+.files-window .section-header {
+    color: @text-muted-color;
+    font-size:16px;
+    line-height:24px;
+    height:24px;
+    padding: 10px;
+    font-weight:600;
+}
+
+.files-window .section-header-actions {
+    float:right;
+}
+
+.files-list {
+    list-style:none;
+    margin:0;
+    padding-left:10px;
+}
+
+.files-list-item {
+    padding: 5px 10px;
+    display:flex;
+    justify-content: space-between;
+    user-select: none;
+}
+
+.files-list-label { 
+    flex-grow:1;
+}
+
+.files-list-timestamp {
+    color:@text-muted-color;
+}
+.files-list-actions {
+    opacity:0;
+    padding-left: 10px;
+}
+.files-list-item:hover .files-list-actions{
+    opacity: 1;
+}
