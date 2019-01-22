@@ -1,11 +1,19 @@
-export interface AudioFile {
+declare interface AudioFileProperites {
+    name: string,
+    size: number,
+    lastModified: number,
+    type: string,
+    length: number,
+    sample_rate: number
+}
+declare interface AudioFile {
     data: AudioBuffer;
     id: string;
-    file?: { name: string, size: number, lastModified: number, type: string, length: number, sample_rate: number };
+    file?: AudioFileProperites;
 }
 
 /** Provides the additional properties built in to the proxy traps. For properties proxied in the state object */
-export type Proxied<T> = T & {
+declare type Proxied<T> = T & {
     __store_path__: Readonly<string>;
     set_property: (value_object: object) => void;
 }

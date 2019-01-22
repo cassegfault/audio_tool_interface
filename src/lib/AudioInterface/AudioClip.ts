@@ -13,6 +13,7 @@ export default class AudioClip {
         this.start_position = 0;
         this.track_position = 0;
         var file = audioInterface.files.find((file) => file.id === file_id);
+        console.log(JSON.parse(JSON.stringify(file)));
         this.length = this.max_length = file && (file.file.length / file.file.sample_rate);
         this.id = make_guid();
     }

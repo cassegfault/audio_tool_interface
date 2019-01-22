@@ -1,0 +1,125 @@
+.login-page {
+    text-align:center;
+}
+
+.login-form {
+    background: lighten(@app-background,10%);
+    border-radius: 10px;
+    padding: 25px;
+    max-width: 400px;
+    margin: 100px auto 0 auto;
+}
+
+.login-title {
+    margin:10px 0;
+    text-align: left;
+    font-size:2em;
+}
+
+/* Fields */
+.login-input {
+    background:none;
+    border: none;
+    border-bottom: 1px solid fade(@brand-primary,90%);
+    margin-bottom:1px;
+    font-size: 1.5em;
+    margin-top:15px;
+    line-height:2em;
+    color:@text-color;
+    caret-color: @brand-primary;
+    width:100%;
+
+    &:focus {
+        outline:none;
+        border-bottom-color: @brand-primary;
+        border-bottom-width:2px;
+        margin-bottom:0;
+    }
+
+    &:-webkit-autofill,
+    &:-webkit-autofill:hover, 
+    &:-webkit-autofill:focus {
+        -webkit-text-fill-color: @app-background;
+        -webkit-box-shadow: 0 0 0px 1000px @brand-primary inset;
+    }
+}
+
+.login-label {
+    display:none;
+}
+
+.login-submit {
+    width:calc(~"100% - 8px");
+    margin:14px 4px 0 4px;
+    background: linear-gradient(to top, darken(@brand-primary,20%), darken(@brand-primary,10%) 95%, darken(@brand-primary,5%));
+    color:@text-color;
+    border: 1px solid darken(@brand-primary,20%);
+    border-radius:4px;
+    font-size:1.4em;
+    padding:10px 0;
+    text-shadow: 0 1px 1px fade(darken(@brand-primary,20%),60%);
+    cursor:pointer;
+
+    &:hover{
+        background: linear-gradient(to top, darken(@brand-primary,15%), darken(@brand-primary,5%) 95%, @brand-primary);
+    }
+    &:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px fade(@brand-primary,80%);
+    }
+}
+
+
+// Division between Email / Password and Oauth signin
+.login-separator {
+    border: 0.5px solid lighten(@app-background, 20%);
+    margin:20px 0;
+}
+
+/* Google */
+.google-button {
+    height: 40px;
+    border-width: 0;
+    background: white;
+    color: #737373;
+    border-radius: 5px;
+    white-space: nowrap;
+    box-shadow: 1px 1px 0px 1px rgba(0,0,0,0.05);
+    transition-property: background-color, box-shadow;
+    transition-duration: 150ms;
+    transition-timing-function: ease-in-out;
+    padding: 0;
+    cursor:pointer;
+    width:100%;
+
+    &:focus,
+    &:hover {
+        box-shadow: 1px 4px 5px 1px rgba(0,0,0,0.2);
+    }
+
+    &:active {
+        background-color: #e5e5e5;
+        box-shadow: none;
+        transition-duration: 10ms;
+    }
+
+    
+    .google-button__icon {
+        display: inline-block;
+        vertical-align: middle;
+        margin: 8px 0 8px 8px;
+        width: 18px;
+        height: 18px;
+        box-sizing: border-box;
+    }
+
+    .google-button__text {
+        color: #737373;
+        display: inline-block;
+        vertical-align: middle;
+        padding: 0 24px;
+        font-size: 14px;
+        font-weight: bold;
+        font-family: 'Roboto',arial,sans-serif;
+    }
+}

@@ -1,4 +1,3 @@
-import { AudioFile } from "../common"
 import AudioTrack from "./AudioTrack";
 import AudioClip from "./AudioClip";
 import { AudioInterface, audioInterface } from "./AudioInterface";
@@ -47,4 +46,4 @@ import { AudioInterface, audioInterface } from "./AudioInterface";
 
 */
 
-export { AudioTrack, AudioFile, AudioClip, AudioInterface, audioInterface };
+export { AudioTrack, AudioClip, AudioInterface, audioInterface };

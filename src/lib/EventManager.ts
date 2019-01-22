@@ -2,7 +2,7 @@ import { make_guid } from "utils/helpers";
 import { debug } from "utils/console";
 
 type EventHandle = {
-    check_func: (...args) => boolean,
+    check_func?: (...args) => boolean,
     callback: (...args) => void
 }
 
@@ -34,14 +34,13 @@ export default class EventManager {
     
     fire(e: string, ...args: any[]) {
         if (!this.queue.has(e)) {
-            console.warn(`Could not find event ${e}`)
             return;
         }
         
         debug(`Firing ${e} with ${this.queue.get(e).size}`, this.queue.get(e), ...args);
 
         this.queue.get(e).forEach((handle: EventHandle) => {
-            if (!handle.check_func || handle.check_func(...args)) {
+            if (handle.check_func === undefined || handle.check_func(...args)) {
                 handle.callback(...args);
             }
         });

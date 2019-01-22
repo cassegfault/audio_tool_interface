@@ -1,21 +1,21 @@
 import * as React from "react";
-import BaseRoute from "app/pages/PageController";
+import { BaseAuthenticatedRoute } from "app/pages/BaseRoute";
 import EditorView from "./EditorPage";
+import { warn } from "utils/console";
 
-export default class EditorRoute extends BaseRoute {
-    num: number;
+export default class EditorRoute extends BaseAuthenticatedRoute {
     view: any = EditorView;
-    
-    constructor() {
-        super();
-        this.num = 0;
+    project_id: string;
+    activate({ params, redirect }) {
+        if (!params.has("project_id")) {
+            warn("Did not receive project_id", params);
+            return redirect('/');
+        }
+        this.project_id = params.get("project_id");
     }
 
-    increment() {
-        this.num++;
-    }
     render(): React.ReactNode {
-        return (<EditorView />)
+        return (<EditorView project_id={this.project_id} />)
     }
 
 }

@@ -4,52 +4,62 @@ import TrackEditor from "app/components/audio/TrackEditor";
 import Toolbar from "app/components/sections/Toolbar";
 import Menubar, { MenuItem } from "app/components/sections/Menubar";
 import { audioInterface } from "lib/AudioInterface";
+import Requests from "requests";
+import audio_store from "app/audio_store";
+import { debounce } from "utils/helpers";
 
 
-export default class EditorView extends React.Component {
+export default class EditorView extends React.Component<{ project_id: string }> {
     state: any;
+    project_id: any;
+    project_name: any;
     menus: Array<MenuItem>;
+
     constructor(props) {
         super(props);
+        this.state = {
+            is_loading: true
+        };
+        this.load_project(props.project_id).then(() => { this.setState({ is_loading: false }); });
         this.menus = [{
             label: "File",
-            options: [{ 
-                    label: "New",
-                    action:()=>{}
-                },{ 
-                    label: "Save",
-                    action:()=>{}
-                },{ 
-                    label: "Import Audio...",
-                    action:()=>{ audioInterface.upload_with_dialog(); }
-                },{ 
-                    label: "Download",
-                    action:()=>{}
-                }],
+            options: [{
+                label: "New",
+                action: () => { }
+            }, {
+                label: "Save",
+                action: () => { }
+            }, {
+                label: "Import Audio...",
+                action: () => { audioInterface.upload_with_dialog(); }
+            }, {
+                label: "Download",
+                action: () => { }
+            }],
         }, {
             label: "Edit",
-            options: [{ 
-                    label: "Undo",
-                    action:()=>{ audioInterface.undo(); }
-                },{ 
-                    label: "Redo",
-                    action:()=>{ audioInterface.redo(); }
-                },{ 
-                    label: "Cut",
-                    action:()=>{}
-                },{ 
-                    label: "Copy",
-                    action:()=>{}
-                },{ 
-                    label: "Paste",
-                    action:()=>{}
-                }],
+            options: [{
+                label: "Undo",
+                action: () => { audioInterface.undo(); }
+            }, {
+                label: "Redo",
+                action: () => { audioInterface.redo(); }
+            }, {
+                label: "Cut",
+                action: () => { }
+            }, {
+                label: "Copy",
+                action: () => { }
+            }, {
+                label: "Paste",
+                action: () => { }
+            }],
         }, {
             label: "View",
-            options: [{ 
-                    label: "Zoom",
-                    action:()=>{}
-                }],
+            options: [{
+                label: "Zoom",
+                action: () => { }
+            }],
         }, {
             label: "Help",
             options: [
@@ -58,22 +68,42 @@ export default class EditorView extends React.Component {
                     label: (<span>Search<input type="text" /></span>)
                 }
             ]
-    }]
+        }];
+    }
+
+    async load_project(project_id: string) {
+        var { output, error_message } = await Requests.get("project", { guid: project_id });
+        if (error_message) {
+            return Promise.reject();
+        }
+        this.project_id = project_id;
+        this.project_name = output.name;
+        audioInterface.load(JSON.parse(output.project_data), project_id, output.name);
+        audioInterface.store.add_observer(["files.@each", "tracks.@each", ""], debounce(50, () => {
+            console.log("Saving Project")
+            this.save_project();
+        }));
+    }
+
+    async save_project() {
+        await Requests.post("project", { guid: this.project_id, name: this.project_name, project_data: JSON.stringify(audioInterface.store.state) });
     }
 
     render(): React.ReactNode {
-
+        if (this.state.is_loading) {
+            return (<div className="page editor-page">Loading...</div>)
+        }
         return (<div className="page editor-page">
-                <Menubar menus={this.menus} title="Patrick Carney Interview w/ Audio Podcast" />
-                <Toolbar />
-                <div className="main-content">
-                    <div className="sidebar">
-                        <Files />
-                    </div>
-
-                    <TrackEditor />
+            <Menubar menus={this.menus} title={this.project_name} />
+            <Toolbar />
+            <div className="main-content">
+                <div className="sidebar">
+                    <Files />
                 </div>
-            </div>)
+
+                <TrackEditor />
+            </div>
+        </div>)
     }
-    
+
 }

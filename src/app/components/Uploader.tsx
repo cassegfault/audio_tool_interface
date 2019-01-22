@@ -19,8 +19,8 @@ export class Uploader extends React.Component<object, UploaderState> {
         files: null
     }
 
-    componentDidMount(){
-        
+    componentDidMount() {
+
         this.setState({
             ctx: new AudioContext()
         });
@@ -45,28 +45,28 @@ export class Uploader extends React.Component<object, UploaderState> {
         //source.start(0);
     }
 
-    uploadFile(){
+    uploadFile() {
         let d = new FormData();
         for (let i = 0; i < this.state.files.length; i++) {
             let file = this.state.files[i];
-    
+
             d.append(`file${i}`, file);
         }
         console.log(d);
-        Requests.post("http://localhost:9095/decode",d, { responseType: "arraybuffer" }).then((arrayBuffer: any)=>{
+        /*Requests.post("decode",d, { responseType: "arraybuffer" }).then(({ response: arrayBuffer })=>{
             this.state.ctx.decodeAudioData(arrayBuffer, this.initAudio.bind(this));
         }).catch((xhr)=>{
             console.error("Couldn't reach API", xhr);
-        });
-    
+        });*/
+
     }
 
     render() {
         return (<div>
-                    <input type="file" name="audio-file-upload" ref="file_upload" accept=".mp3,.aac,.wav" onChange={evt => this.setFiles(evt)}></input>
-                    <button onClick={this.uploadFile.bind(this)}>Upload</button>
-                    <input type="range" min="1" max="1000" ref="numbins" value={this.state.numbins} onChange={evt => this.changeBins(evt)}></input>
-                    <AudioView audioctx={this.state.ctx} numbins={this.state.numbins} buffer={this.state.buffer}></AudioView>
-                </div>);
+            <input type="file" name="audio-file-upload" ref="file_upload" accept=".mp3,.aac,.wav" onChange={evt => this.setFiles(evt)}></input>
+            <button onClick={this.uploadFile.bind(this)}>Upload</button>
+            <input type="range" min="1" max="1000" ref="numbins" value={this.state.numbins} onChange={evt => this.changeBins(evt)}></input>
+            <AudioView audioctx={this.state.ctx} numbins={this.state.numbins} buffer={this.state.buffer}></AudioView>
+        </div>);
     }
 }

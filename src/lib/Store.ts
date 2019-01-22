@@ -1,6 +1,6 @@
 import EventManager from "lib/EventManager";
 import { isObj, deepCopy, isArray } from "utils/helpers";
-import { warn, error } from "utils/console";
+import { warn, error, debug } from "utils/console";
 import { STATE_CHANGED } from "utils/symbols";
 
 /** A snapshot of the state for the purposes of reverting or re-committing some action  */
@@ -33,9 +33,26 @@ export default class Store<StoreType extends object> {
 
     constructor(params) {
         this.actions = params.actions || {};
-        this.mutations = params.mutations || {};
-        this._state = params.state || {};
+        this.mutations = Object.assign({
+            set_property({ state, payload: { value_object, path } }) {
+                var current = state;
+                path.forEach((part) => {
+                    current = current[part];
+                });
+                Object.keys(value_object).forEach((key) => {
+                    current[key] = value_object[key];
+                });
+            }
+        }, params.mutations);
+
         this.events = new EventManager();
+        this.setup_state(params.state || {});
+    }
+
+    public setup_state(new_state: StoreType) {
+        this._state = new_state;
+        this.history = [];
+        this.future = [];
         this.history.push({
             type: "INIT_STATE",
             stateData: deepCopy(this._state)
@@ -45,6 +62,11 @@ export default class Store<StoreType extends object> {
         this.update_state();
         console.log("Final State", this.state);
         console.groupEnd();
+        this.events.fire(STATE_CHANGED, []);
+    }
+
+    public did_update(path?: string[]) {
+        this.events.fire(STATE_CHANGED, path || []);
     }
 
     /** Creates a proxy for the object held at the path relative to `_state`, provides access to that path through `obj.__store_path__`
@@ -61,9 +83,9 @@ export default class Store<StoreType extends object> {
                 });
 
                 Reflect.set(state, key, value);
-                this.events.fire(STATE_CHANGED, path);
+                this.events.fire(STATE_CHANGED, path.concat([key]));
                 return true;
-            } else  if (this.is_silently_modifying) {
+            } else if (this.is_silently_modifying) {
                 Reflect.set(state, key, value);
                 return true;
             }
@@ -74,13 +96,13 @@ export default class Store<StoreType extends object> {
             if (property === '__store_path__') {
                 return path.join('.');
             }
-            switch(property){
+            switch (property) {
                 case '__store_path__':
                     return path.join('.');
                     break;
                 case 'set_property':
                     return (value_object: object) => {
-                        this.dispatch('set_property', { value_object, path });
+                        this.commit('set_property', { value_object, path });
                     }
                     break;
                 default:
@@ -100,17 +122,23 @@ export default class Store<StoreType extends object> {
      * @returns String ID of the event handler which can be used to destruct the event handler
      */
     public add_observer(path: string[] | string, callback: (...args) => void) {
-        var check_path = path;
-        
-        if (!isArray(check_path)) {
-            check_path = (<string>path).split('.');
-        }
-        
+        var check_paths = (<string[]>(isArray(path) ? path : [path])).map((str) => str.split('.'));
+
         var handler_id = this.events.on(STATE_CHANGED, callback, (changed_path: string[]) => {
-            var found_diff = changed_path.find((prop, index) => {
-                return check_path[index] !== '@each' && check_path[index] !== prop;
+            console.log("updated", changed_path)
+            if (changed_path.length < 1) {
+                return true;
+            }
+
+            var found_match = check_paths.find((check_path) => {
+                var found_diff = changed_path.find((prop, index) => {
+                    return check_path[index] !== '@each' && check_path[index] !== prop;
+                });
+
+                return found_diff === undefined;
             });
-            return !!found_diff;
+
+            return found_match !== undefined;
         });
 
         return handler_id;
@@ -128,17 +156,17 @@ export default class Store<StoreType extends object> {
     /** Reverts the most recent action */
     undo() {
         var lastMutation = this.history.pop(),// This is the mutation that brings us to our current state
-            previousMutation = this.history.length > 0 ? this.history[this.history.length - 1] : null; 
+            previousMutation = this.history.length > 0 ? this.history[this.history.length - 1] : null;
         if (!previousMutation) {
             throw "Calling undo with no history";
         }
         this.future.unshift(lastMutation); // Push our current state into the future
-        console.log('previousMutation',previousMutation);
+        console.log('previousMutation', previousMutation);
         this.is_silently_modifying = true;
         this.state = Object.assign(this.state, deepCopy(previousMutation.stateData));
         console.group('UNDO')
-            console.log('assigned state', JSON.stringify(this.state));
-            console.log('last stateData', previousMutation.stateData);
+        console.log('assigned state', JSON.stringify(this.state));
+        console.log('last stateData', previousMutation.stateData);
         console.groupEnd();
         this.is_silently_modifying = false;
     }
@@ -156,17 +184,21 @@ export default class Store<StoreType extends object> {
     }
 
     /** Calls an action `key` with paramater `payload` */
-    dispatch(key: string, payload: any) {
-        if(!this.actions[key]) {
+    dispatch(key: string, payload?: any) {
+        if (!this.actions[key]) {
             error(`Action dispatched that does not exist: ${key}`);
             return;
         }
-        this.actions[key]({commit: this.commit.bind(this), payload });
+        return this.actions[key]({
+            commit: this.commit.bind(this),
+            dispatch: this.dispatch.bind(this),
+            payload
+        });
     }
 
     /** Calls an mutation `key` with paramater `payload`, should only be called from actions */
-    commit(key: string, payload: any) {
-        if(typeof this.mutations[key] !== 'function') {
+    commit(key: string, payload?: any) {
+        if (typeof this.mutations[key] !== 'function') {
             error(`Mutation committed that does not exist: ${key}`);
             return false;
         }
@@ -179,11 +211,11 @@ export default class Store<StoreType extends object> {
         };
         this.mutations[key](params);
         this.update_state();
-        
+
         // Combine current mutation set
         // It's possible this is better placed at the action level
         var mutation = deepCopy(this.state);
-        this.currentHistoryBatch.forEach((mutationPiece)=>{
+        this.currentHistoryBatch.forEach((mutationPiece) => {
             mutation = Object.assign(mutation, mutationPiece.stateData);
         });
         this.history.push({
@@ -200,7 +232,7 @@ export default class Store<StoreType extends object> {
     /** Returns an object in the state located at the path array
      * @param path Array of strings representing a succession of children of `_state`
      */
-    get_object_by_path(path: string[]){
+    get_object_by_path(path: string[]) {
         var current = this._state;
         path.forEach((part) => {
             current = current[part];
@@ -220,7 +252,7 @@ export default class Store<StoreType extends object> {
                         if (!obj[key].__store_path__) {
                             // not a proxy
                             this.is_silently_modifying = true;
-                            obj[key] = this.proxy_by_path([].concat(currentPath,[key]));
+                            obj[key] = this.proxy_by_path([].concat(currentPath, [key]));
                             this.is_silently_modifying = false;
                         }
                     }
