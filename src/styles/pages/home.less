@@ -1,0 +1,109 @@
+@logo-height: 48px;
+.home-page {
+    max-width:1368px;
+    margin: 0 auto;
+}
+
+.logo-bar {
+    margin:@logo-height 0;
+    display:flex;
+    justify-content:space-between;
+}
+.logo-container {
+    height:@logo-height;
+    margin:0;
+    user-select: none;
+    cursor:pointer;
+}
+.logo-text{
+    color: @brand-primary;
+    font-family: 'Montserrat', 'Inter UI', sans-serif;
+    font-weight: 800;
+    vertical-align: middle;
+    line-height: 48px;
+    font-size: 40px;
+    padding-left:16px;
+}
+.logo-image{
+    width: auto;
+    height:@logo-height;
+    vertical-align:middle
+}
+
+@account-nav-icon-size: 40px;
+.account-nav-icon {
+    border: 4px solid @brand-primary;
+    color:@brand-primary;
+    display: inline-block;
+    font-size: round(@account-nav-icon-size * 0.8);
+    font-family: 'Montserrat', 'Inter UI', sans-serif;
+    padding: 5px;
+    border-radius: 100px;
+    width: @account-nav-icon-size;
+    line-height: @account-nav-icon-size;
+    height: @account-nav-icon-size;
+    text-align: center;
+    vertical-align: middle
+}
+
+.account-nav-label {
+    display: inline-block;
+    margin-left: 24px;
+    font-size: 16px;
+    line-height: 1.6em;
+    vertical-align: middle;
+    color:@text-muted-color;
+}
+.account-nav-email {
+    color:@text-color;
+}
+
+.home-navigation-grid {
+    display:grid;
+    grid-template-columns: repeat(2,1fr);
+    grid-row-gap:36px;
+    grid-column-gap:36px;
+    margin-top:36px;
+}
+
+
+@project-icon-size: 64px;
+@project-icon-margin: 20px;
+.project-item {
+    cursor:pointer;
+}
+
+.project-item-details {
+    display:inline-block;
+    font-size:16px;
+    line-height:1.4em;
+    vertical-align:top;
+    margin-left:20px;
+    padding-bottom: 24px;
+    border-bottom:1px solid fade(@text-muted-color, 20%);
+    height: @project-icon-size;
+    @details-width-buffer: @project-icon-size + @project-icon-margin;
+    width: calc(~"100% - " @details-width-buffer);
+}
+
+.home-navigation-grid.count-even .project-item:nth-last-of-type(-n+2) .project-item-details,
+.home-navigation-grid.count-odd .project-item:nth-last-of-type(-n+1) .project-item-details {
+    border-bottom: none;
+}
+
+.project-item-meta {
+    font-size: 12px;
+    color: @text-muted-color;
+}
+
+.project-item-icon {
+    width: @project-icon-size;
+    height: @project-icon-size;
+    line-height: @project-icon-size;
+    background-color: @brand-primary;
+    border-radius: round(@project-icon-size / 8);
+    display: inline-block;
+    text-align: center;
+    font-size: @project-icon-size / 2;
+    line-height: @project-icon-size;
+}

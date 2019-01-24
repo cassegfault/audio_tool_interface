@@ -1,8 +1,10 @@
 import Store from "lib/Store"
-import { app_store,  AppState } from "app/app_store";
+import { app_store, AppState } from "app/app_store";
 import User from "models/User";
 import { warn } from "utils/console";
 import { isString, isNumber } from "utils/helpers";
+import Requests from "requests";
+import Project from "models/Project";
 
 enum LocalStorageType { local = "local", session = "session" }
 
@@ -11,26 +13,36 @@ class SessionClass {
     private static _instance: SessionClass = new SessionClass();
     private constructor() {
         // Decide if we're creating an instance or not
-        if(SessionClass._instance) {
+        if (SessionClass._instance) {
             return SessionClass._instance;
-        } 
+        }
         SessionClass._instance = this;
     }
-    
-    public static getInstance(){
+
+    public static getInstance() {
         return SessionClass._instance;
     }
     //-!
-    get store(): Store<AppState>{
+    get store(): Store<AppState> {
         return app_store;
     }
-    get user(): User {
-        return this.store.state.user;
+    get user(): Proxied<User> {
+        return <Proxied<User>>this.store.state.user;
+    }
+    async get_projects() {
+        var { output, error_message } = await Requests.get("projects");
+        if (error_message) {
+            throw new Error(`Error getting projects, ${error_message}`);
+        }
+        this.user.set_property({
+            projects: output.map(project_json => new Project(project_json))
+        });
+        this.store.did_update('user.projects');
     }
 
     make_local_property({ key, value, default_value, storage_type = LocalStorageType.local }:
-                        { key: string, value: any, default_value: any, storage_type: LocalStorageType}) {
-        return new Proxy(value,{
+        { key: string, value: any, default_value: any, storage_type: LocalStorageType }) {
+        return new Proxy(value, {
             get(target, property, receiver) {
                 var storage = storage_type == LocalStorageType.session ? window.sessionStorage : window.localStorage;
                 if (!storage) {
@@ -38,7 +50,7 @@ class SessionClass {
                     return null;
                 }
                 var return_value = storage.getItem(key);
-                if(isString(value) || isString(default_value)){
+                if (isString(value) || isString(default_value)) {
                     return return_value;
                 } else if (isNumber(value) || isNumber(default_value)) {
                     return parseFloat(return_value);
