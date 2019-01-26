@@ -6,10 +6,13 @@ import Clip from "./Clip";
 import { log } from "utils/console";
 import Interactable from "../helpers/Interactable";
 import EventManager from "lib/EventManager";
+import MarkerViewport from "./MarkerViewport";
+import EditorInfo from "lib/AudioInterface/EditorInfo";
 
 export default class ClipEditor extends StoreComponent<AudioState> {
     state: any;
     events: EventManager = new EventManager();
+    editorRef: React.RefObject<HTMLDivElement>;
     constructor(props) {
         super(audioInterface.store, props);
         this.add_observer(["tracks.length", "tracks.@each.clips.length", "editorInfo.project_length", "editorInfo.window_scale"], () => { this.forceUpdate(); });
@@ -19,6 +22,7 @@ export default class ClipEditor extends StoreComponent<AudioState> {
         };
         this.events.on('beginDrag', (evt) => { console.log('begin'); this.begin_drag(evt) });
         this.events.on('endDrag', (evt) => { this.end_drag(evt) });
+        this.editorRef = React.createRef<HTMLDivElement>();
     }
 
     get interactions() {
@@ -113,9 +117,12 @@ export default class ClipEditor extends StoreComponent<AudioState> {
         var editorWidth = this.store.state.editorInfo.project_length * this.store.state.editorInfo.window_scale;
 
         const interaction = this.state.is_interacting ? <Interactable eventManager={this.events} mouseDownCallback={evt => this.mouseDown(evt)} mouseUpCallback={evt => this.mouseUp(evt)} mouseMoveCallback={evt => this.mouseMove(evt)} /> : null;
+
         return (<div className="clip-editor"
+            ref={this.editorRef}
             onDragOver={evt => this.dragOverHandler(evt)}
             onDrop={evt => this.dropHandler(evt)}>
+            <MarkerViewport editor={this.editorRef} />
             <div style={{ minWidth: '100%', width: editorWidth, position: 'relative' }}>
                 {tracks}
             </div>

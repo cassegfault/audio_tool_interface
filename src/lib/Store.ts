@@ -65,7 +65,10 @@ export default class Store<StoreType extends object> {
         this.events.fire(STATE_CHANGED, []);
     }
 
-    public did_update(path?: string[]) {
+    public did_update(path?: string[] | string) {
+        if (path && !isArray(path)) {
+            path = (<string>path).split(".");
+        }
         this.events.fire(STATE_CHANGED, path || []);
     }
 

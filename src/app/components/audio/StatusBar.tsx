@@ -36,7 +36,7 @@ export default class StatusBar extends React.Component {
                 {seconds_to_timestamp(audioInterface.editorInfo.current_position)}
             </div>
             <div className="statusbar-zoom">
-                <input ref={el => this.scale_input = el} type="range" min="10" max="100" style={{ maxWidth: 300 }} onChange={evt => this.set_window_range()} />
+                <input ref={el => this.scale_input = el} type="range" min="10" max="1000" style={{ maxWidth: 300 }} onChange={evt => this.set_window_range()} />
             </div>
         </div>);
     }

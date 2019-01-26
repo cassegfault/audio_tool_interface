@@ -1,4 +1,3 @@
-import { object } from "prop-types";
 import { error } from "./console";
 
 export function make_guid() {

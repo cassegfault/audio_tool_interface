@@ -11,7 +11,7 @@ export default class StoreComponent<StoreType extends object, P = {}, S = {}> ex
         super(props);
         this._store = store;
     }
-    get store(){
+    get store() {
         return this._store;
     }
 
@@ -25,7 +25,6 @@ export default class StoreComponent<StoreType extends object, P = {}, S = {}> ex
     }
 
     componentWillUnmount() {
-        super.componentWillUnmount();
         this._observers.forEach((handler_id) => {
             this._store.remove_observer(handler_id);
         });

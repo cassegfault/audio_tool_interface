@@ -187,6 +187,8 @@ class AudioInterface {
                     if (file) {
                         file.file.length = audioBuffer.length;
                     }
+                    var idx = this.files.findIndex(existing_file => existing_file.id === guid);
+                    this.store.did_update(`files.${idx}`);
                     resolve(this.store.state.files)
                 }, (e) => {
                     warn(`Error decoding audio data: ${e}`);

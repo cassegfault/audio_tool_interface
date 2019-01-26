@@ -4,8 +4,10 @@ import { debug } from "utils/console";
 import EditorInfo from "lib/AudioInterface/EditorInfo";
 import Interactable from "../helpers/Interactable";
 import EventManager from "lib/EventManager";
+import StoreComponent from "lib/StoreComponent";
+import { AudioState } from "app/audio_store";
 
-export default class Clip extends React.Component<{ clip: Proxied<AudioClip>, editorInfo: EditorInfo, eventManager: EventManager }> {
+export default class Clip extends StoreComponent<AudioState, { clip: Proxied<AudioClip>, editorInfo: EditorInfo, eventManager: EventManager }> {
     state: any;
     parentEl: any;
     left_drag: boolean = false;
@@ -17,11 +19,15 @@ export default class Clip extends React.Component<{ clip: Proxied<AudioClip>, ed
     width: number;
 
     constructor(props) {
-        super(props);
+        super(audioInterface.store, props);
         this.state = { left: 0, width: 0, mouse: 0, interacting: null };
         this.props.eventManager.on('drag', this.update_state.bind(this));
         this.props.eventManager.on('endDrag', this.mouseUp.bind(this));
+        var fileIndex = audioInterface.files.findIndex(file => file.id === this.props.clip.file_id);
+        console.log("Watching ", `files.${fileIndex}`);
+        this.store.add_observer([`files.${fileIndex}`], () => { console.log("updating clip after file change"); this.forceUpdate() });
     }
+
     componentDidMount() {
         this.ctx = this.canvas_el.getContext('2d');
     }
@@ -48,14 +54,6 @@ export default class Clip extends React.Component<{ clip: Proxied<AudioClip>, ed
         var clip = this.props.clip;
         var delta = this.pixels_to_seconds(evt.clientX - evt.start_x);
         if (this.state.interacting == 'left') {
-            /**
-             * length is the distance from the new track 
-             * 
-             * (init_track_position + delta)
-             * 
-             * 
-             * 
-             */
             var length = Math.max(Math.min(evt.initial_clip_data.length - ((evt.initial_clip_data.start_position + delta) - evt.initial_clip_data.start_position), clip.max_length), 0),
                 start_position = Math.min(Math.max(evt.initial_clip_data.start_position + delta, 0), clip.max_length),
                 track_position = Math.min(Math.max(evt.initial_clip_data.track_position + delta, evt.initial_clip_data.track_position - (clip.max_length - evt.initial_clip_data.length)), (evt.initial_clip_data.track_position + evt.initial_clip_data.length));
@@ -72,16 +70,6 @@ export default class Clip extends React.Component<{ clip: Proxied<AudioClip>, ed
                 track_position: Math.max(evt.initial_clip_data.track_position + delta, 0)
             });
         }
-    }
-    /*
-        Max length: 6
-        track position: 4
-        length: 5
-        min track position: pos + (max - length)
-    */
-    pixel_to_time(x: number) {
-        var bounds = this.parentEl.getBoundingClientRect();
-        return ((x - bounds.left) / (this.props.editorInfo.project_length * this.props.editorInfo.window_scale)) * (this.props.editorInfo.project_length);
     }
 
     release() {
@@ -121,6 +109,7 @@ export default class Clip extends React.Component<{ clip: Proxied<AudioClip>, ed
             console.log('FILE DETAILS', file, this.props.clip.file_id)
             if (!file || !this.ctx) {
                 // draw as empty proxy
+                console.log("Did not draw clip because there was no file or context", this.ctx, file);
                 break;
             }
 
@@ -174,23 +163,3 @@ export default class Clip extends React.Component<{ clip: Proxied<AudioClip>, ed
         </div>);
     }
 }
-/*
-
-window_scale = seconds to display
-clip editor width = project length * window_scale
-clip position = (start_position / project length) * editor width
-clip width = (clip length / project length) * editor width
-
-mouse down clip
-interaction pops - set up feedback
-interaction tracks movement, sends feedback
-mouse up clip
-commit history
-
-Not for drag/drop
-
-Interactable <children>
-Interactable onmousedown -> grow -> onmousedown feedback
-Interactable onmousemove -> mousemove feedback
-Interactable onmouseup -> mouseup feedback -> shrink
-*/
