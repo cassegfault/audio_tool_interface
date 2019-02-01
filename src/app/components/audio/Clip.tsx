@@ -7,7 +7,15 @@ import EventManager from "lib/EventManager";
 import StoreComponent from "lib/StoreComponent";
 import { AudioState } from "app/audio_store";
 
-export default class Clip extends StoreComponent<AudioState, { clip: Proxied<AudioClip>, editorInfo: EditorInfo, eventManager: EventManager }> {
+interface ClipProps {
+    clip: Proxied<AudioClip>,
+    editorInfo: EditorInfo,
+    eventManager: EventManager,
+    is_selected?: boolean,
+    selection_start: number
+    parent_track: AudioTrack
+}
+export default class Clip extends StoreComponent<AudioState, ClipProps> {
     state: any;
     parentEl: any;
     left_drag: boolean = false;
@@ -18,13 +26,12 @@ export default class Clip extends StoreComponent<AudioState, { clip: Proxied<Aud
     left: number;
     width: number;
 
-    constructor(props) {
+    constructor(props: ClipProps) {
         super(audioInterface.store, props);
         this.state = { left: 0, width: 0, mouse: 0, interacting: null };
         this.props.eventManager.on('drag', this.update_state.bind(this));
         this.props.eventManager.on('endDrag', this.mouseUp.bind(this));
         var fileIndex = audioInterface.files.findIndex(file => file.id === this.props.clip.file_id);
-        console.log("Watching ", `files.${fileIndex}`);
         this.store.add_observer([`files.${fileIndex}`], () => { console.log("updating clip after file change"); this.forceUpdate() });
     }
 
@@ -87,7 +94,7 @@ export default class Clip extends StoreComponent<AudioState, { clip: Proxied<Aud
     set_interacting(evt, interacting: string) {
         evt.stopPropagation()
         if (interacting) {
-            this.props.eventManager.fire('beginDrag', { clientX: evt.clientX, initial_clip_data: Object.assign({}, this.props.clip) });
+            this.props.eventManager.fire('beginDrag', { clientX: evt.clientX, initial_clip_data: Object.assign({}, this.props.clip), interacting });
         } else {
             this.props.eventManager.fire('endDrag', { clientX: evt.clientX, initial_clip_data: Object.assign({}, this.props.clip) });
         }
@@ -106,10 +113,9 @@ export default class Clip extends StoreComponent<AudioState, { clip: Proxied<Aud
 
         while (true) {
             var file = audioInterface.files.find((file: AudioFile) => this.props.clip.file_id == file.id);
-            console.log('FILE DETAILS', file, this.props.clip.file_id)
             if (!file || !this.ctx) {
                 // draw as empty proxy
-                console.log("Did not draw clip because there was no file or context", this.ctx, file);
+
                 break;
             }
 
@@ -152,14 +158,15 @@ export default class Clip extends StoreComponent<AudioState, { clip: Proxied<Aud
             clip_start_str = clip.start_position.toPrecision(2) + 's',
             clip_track_str = clip.track_position.toPrecision(2) + 's',
             file = audioInterface.files.find((file) => file.id === this.props.clip.file_id),
-            file_name = file && file.file.name;
-        return (<div className="track-clip"
-            style={{ left: left, width: width, position: 'absolute' }}
+            file_name = file && file.file.name,
+            clip_class = this.props.is_selected ? "track-clip selected" : "track-clip";
+        return (<div className={clip_class}
+            style={{ left: left, width: width, position: 'absolute', backgroundColor: this.props.parent_track.color }}
             onMouseDown={evt => this.set_interacting(evt, 'clip')}>
             <div className="left-interaction" onMouseDown={evt => this.set_interacting(evt, 'left')}></div>
             <div className="right-interaction" onMouseDown={evt => this.set_interacting(evt, 'right')}></div>
-            {clip_length_str} - {clip_start_str} - {clip_track_str}
-            <canvas ref={el => this.canvas_el = el} width={width} height='100' />
+            <div className="track-clip-meta">{clip_length_str} - {clip_start_str} - {clip_track_str}</div>
+            <canvas className="track-clip-canvas" ref={el => this.canvas_el = el} width={width} height='100' />
         </div>);
     }
 }

@@ -9,9 +9,7 @@ export default class HomeView extends React.Component {
         super(props);
         this.state = { email_address: '' };
         Session.store.add_observer(['user.email_address', 'user.projects.length'], () => {
-            console.log("fire Update");
             this.forceUpdate();
-            //this.setState({ email: app_store.state.user.email_address }); 
         });
         Session.get_projects();
     }
@@ -24,7 +22,6 @@ export default class HomeView extends React.Component {
     }
 
     render() {
-        console.log("home rendered");
         var items = Session.user.projects.map(project => {
             return (<div key={project.guid} className="project-item" onClick={evt => this.loadProject(project.guid)}>
                 <div className="project-item-icon"></div>

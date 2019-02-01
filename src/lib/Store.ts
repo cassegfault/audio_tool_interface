@@ -1,6 +1,6 @@
 import EventManager from "lib/EventManager";
 import { isObj, deepCopy, isArray } from "utils/helpers";
-import { warn, error, debug } from "utils/console";
+import { warn, error, debug, log } from "utils/console";
 import { STATE_CHANGED } from "utils/symbols";
 
 /** A snapshot of the state for the purposes of reverting or re-committing some action  */
@@ -50,7 +50,11 @@ export default class Store<StoreType extends object> {
     }
 
     public setup_state(new_state: StoreType) {
-        this._state = new_state;
+        if (this._state) {
+            this._state.load(new_state);
+        } else {
+            this._state = new_state;
+        }
         this.history = [];
         this.future = [];
         this.history.push({
@@ -60,7 +64,7 @@ export default class Store<StoreType extends object> {
         console.group("building state")
         this.state = this.proxy_by_path([]);
         this.update_state();
-        console.log("Final State", this.state);
+        log("Final State", this.state);
         console.groupEnd();
         this.events.fire(STATE_CHANGED, []);
     }
@@ -128,13 +132,14 @@ export default class Store<StoreType extends object> {
         var check_paths = (<string[]>(isArray(path) ? path : [path])).map((str) => str.split('.'));
 
         var handler_id = this.events.on(STATE_CHANGED, callback, (changed_path: string[]) => {
-            console.log("updated", changed_path)
             if (changed_path.length < 1) {
                 return true;
             }
 
             var found_match = check_paths.find((check_path) => {
-                var found_diff = changed_path.find((prop, index) => {
+                // Find the first item along the observed path that does not match the changed path
+                // Note: if the observed path is shorter, it will fire on any changes to changed children
+                var found_diff = check_path.find((prop, index) => {
                     return check_path[index] !== '@each' && check_path[index] !== prop;
                 });
 
@@ -164,12 +169,12 @@ export default class Store<StoreType extends object> {
             throw "Calling undo with no history";
         }
         this.future.unshift(lastMutation); // Push our current state into the future
-        console.log('previousMutation', previousMutation);
+        console.group('UNDO')
+        debug('previousMutation', previousMutation);
         this.is_silently_modifying = true;
         this.state = Object.assign(this.state, deepCopy(previousMutation.stateData));
-        console.group('UNDO')
-        console.log('assigned state', JSON.stringify(this.state));
-        console.log('last stateData', previousMutation.stateData);
+        debug('assigned state', JSON.stringify(this.state));
+        debug('last stateData', previousMutation.stateData);
         console.groupEnd();
         this.is_silently_modifying = false;
     }
@@ -248,11 +253,13 @@ export default class Store<StoreType extends object> {
         var currentPath = [],
             walk_state = (obj) => {
                 Object.keys(obj).forEach((key) => {
-                    if (isObj(obj[key]) || isArray(obj[key])) {
+                    if ((isObj(obj[key]) || isArray(obj[key])) && obj.propertyIsEnumerable(key)) {
                         currentPath.push(key);
                         walk_state(obj[key]);
                         currentPath.pop();
-                        if (!obj[key].__store_path__) {
+                        if (!obj[key].__store_path__ && obj.propertyIsEnumerable(key)) {
+                            if (key === "selection")
+                                debugger;
                             // not a proxy
                             this.is_silently_modifying = true;
                             obj[key] = this.proxy_by_path([].concat(currentPath, [key]));

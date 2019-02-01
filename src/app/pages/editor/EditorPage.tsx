@@ -7,6 +7,8 @@ import { audioInterface } from "lib/AudioInterface";
 import Requests from "requests";
 import audio_store from "app/audio_store";
 import { debounce } from "utils/helpers";
+import { hotkeys } from "lib/HotkeyManager";
+import { debug } from "utils/console";
 
 
 export default class EditorView extends React.Component<{ project_id: string }> {
@@ -69,6 +71,19 @@ export default class EditorView extends React.Component<{ project_id: string }> 
                 }
             ]
         }];
+        var editorInfo = audioInterface.editorInfo;
+        // This could be configurable and saved to the users account
+        hotkeys.initialize({
+            'alt+tab': (e) => { e.preventDefault(); console.warn('pressed alt+tab') },
+            'delete': (e) => {
+                editorInfo.selection.track_selections.forEach((clips, track_idx) => {
+                    if (!clips)
+                        return;
+                    audioInterface.tracks[track_idx].removeClips(clips);
+                });
+
+            }
+        })
     }
 
     async load_project(project_id: string) {
@@ -80,7 +95,7 @@ export default class EditorView extends React.Component<{ project_id: string }> 
         this.project_name = output.name;
         audioInterface.load(JSON.parse(output.project_data), project_id, output.name);
         audioInterface.store.add_observer(["files.@each", "tracks.@each", ""], debounce(50, () => {
-            console.log("Saving Project")
+            debug("Saving Project");
             this.save_project();
         }));
     }
@@ -96,13 +111,10 @@ export default class EditorView extends React.Component<{ project_id: string }> 
         return (<div className="page editor-page">
             <Menubar menus={this.menus} title={this.project_name} />
             <Toolbar />
-            <div className="main-content">
-                <div className="sidebar">
-                    <Files />
-                </div>
-
-                <TrackEditor />
+            <div className="sidebar">
+                <Files />
             </div>
+            <TrackEditor />
         </div>)
     }
 

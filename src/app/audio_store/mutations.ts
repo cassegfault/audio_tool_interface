@@ -31,18 +31,33 @@ export default <MutationsMap>{
     },
     newTrack({ state }) {
         var colorIndex = state.tracks.length % ColorBlindFriendly.length;
-        state.tracks.push(new AudioTrack(make_guid(), `Track ${state.tracks.length + 1}`, ColorBlindFriendly[colorIndex]));
+        state.tracks.push(new AudioTrack({
+            id: make_guid(),
+            name: `Track ${state.tracks.length + 1}`,
+            color: ColorBlindFriendly[colorIndex]
+        }));
     },
     addClipToTrack({ state, payload: { track_id, file_id } }) {
         var foundTrack: AudioTrack = state.tracks.find((track: AudioTrack) => track.id === track_id);
         if (!foundTrack) {
             return warn(`Could not find track: ${track_id}`);
         }
-        foundTrack.clips.push(<Proxied<AudioClip>>(new AudioClip(file_id)));
+        foundTrack.clips.push(<Proxied<AudioClip>>(new AudioClip({ file_id })));
     },
     set_window({ state, payload }) {
         Object.keys(payload).forEach((key) => {
             state.editorInfo[key] = payload[key];
         });
     },
+    removeClipsFromTrack({ state, payload: { track_id, clips } }) {
+        var foundTrack: AudioTrack = state.tracks.find((track: AudioTrack) => track.id === track_id);
+        if (!foundTrack) {
+            return warn(`Could not find track: ${track_id}`);
+        }
+        var new_clips = [].concat(foundTrack.clips);
+        clips.forEach((clip_idx) => {
+            new_clips.splice(clip_idx, 1);
+        });
+        foundTrack.clips = new_clips;
+    }
 }

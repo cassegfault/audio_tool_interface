@@ -18,3 +18,9 @@ declare type Proxied<T> = T & {
     set_property: (value_object: object) => void;
 }
 
+declare interface EditorSelection {
+    time_start: number,
+    time_end: number,
+    /** Indexed tracks containing arrays of selected clip indexes */
+    track_selections: Array<Array<number>>
+}

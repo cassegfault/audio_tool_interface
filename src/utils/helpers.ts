@@ -132,6 +132,7 @@ export function obj_to_formdata(data: any) {
     }, "");
 }
 
+/** Takes in two objects, returns a new object of objA extended by objB */
 export function extend(objA: any, objB: any): any {
     var out = Object.assign({}, objA);
     Object.keys(objB).forEach((key) => {
@@ -152,4 +153,19 @@ export function debounce(delay: number, fn: Function) {
             timer = null;
         }, delay);
     }
+}
+
+export function pixels_to_seconds(pixel_width, project_length, window_scale) {
+    return (pixel_width / (project_length * window_scale)) * (project_length);
+}
+
+export function seconds_to_pixels(seconds, project_length, window_scale) {
+    return (seconds * (project_length * window_scale)) / (project_length);
+}
+
+export function nonenumerable(target: any, propertyKey: string) {
+    let descriptor = Object.getOwnPropertyDescriptor(target, propertyKey) || {};
+    descriptor.enumerable = false;
+    descriptor.writable = true;
+    Object.defineProperty(target, propertyKey, descriptor);
 }

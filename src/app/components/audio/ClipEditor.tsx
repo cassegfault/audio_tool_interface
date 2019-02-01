@@ -3,26 +3,49 @@ import StoreComponent from "lib/StoreComponent";
 import { audioInterface, AudioClip, AudioTrack } from "lib/AudioInterface";
 import { AudioState } from "app/audio_store";
 import Clip from "./Clip";
-import { log } from "utils/console";
+import { log, debug } from "utils/console";
 import Interactable from "../helpers/Interactable";
 import EventManager from "lib/EventManager";
 import MarkerViewport from "./MarkerViewport";
 import EditorInfo from "lib/AudioInterface/EditorInfo";
+import { pixels_to_seconds } from "utils/helpers";
 
-export default class ClipEditor extends StoreComponent<AudioState> {
-    state: any;
+interface ClipEditorState {
+    is_interacting: boolean,
+    is_selecting: boolean,
+    initial_selection: {
+        x: number,
+        y: number
+    },
+    selection_window: {
+        x: number,
+        y: number,
+        width: number,
+        height: number
+    },
+    interactionInfo: { callback: () => void; }
+}
+
+export default class ClipEditor extends StoreComponent<AudioState, {}, ClipEditorState> {
+    state: ClipEditorState;
     events: EventManager = new EventManager();
     editorRef: React.RefObject<HTMLDivElement>;
+    clipContainerRef: React.RefObject<HTMLDivElement>;
+    clipSizingRef: HTMLDivElement;
     constructor(props) {
         super(audioInterface.store, props);
         this.add_observer(["tracks.length", "tracks.@each.clips.length", "editorInfo.project_length", "editorInfo.window_scale"], () => { this.forceUpdate(); });
         this.state = {
             is_interacting: false,
+            is_selecting: false,
+            initial_selection: null,
+            selection_window: null,
             interactionInfo: { callback: () => { } }
         };
-        this.events.on('beginDrag', (evt) => { console.log('begin'); this.begin_drag(evt) });
+        this.events.on('beginDrag', (evt) => { this.begin_drag(evt) });
         this.events.on('endDrag', (evt) => { this.end_drag(evt) });
         this.editorRef = React.createRef<HTMLDivElement>();
+        this.clipContainerRef = React.createRef<HTMLDivElement>();
     }
 
     get interactions() {
@@ -97,18 +120,95 @@ export default class ClipEditor extends StoreComponent<AudioState> {
         track.addClipFromFile(file_id);
     }
 
+    selection_start(event) {
+        var x = (event.nativeEvent.pageX - this.clipContainerRef.current.offsetLeft) + this.editorRef.current.scrollLeft,
+            y = (event.nativeEvent.pageY - this.clipContainerRef.current.offsetTop) + this.editorRef.current.scrollTop;
+        debug('start', x, y);
+        this.setState({
+            is_selecting: true,
+            initial_selection: {
+                x,
+                y
+            },
+            selection_window: {
+                x,
+                y,
+                width: 0,
+                height: 0
+            }
+        })
+    }
+
+    selection_update(event) {
+        if (!this.state.initial_selection)
+            return;
+
+        var x = (event.nativeEvent.pageX - this.clipContainerRef.current.offsetLeft) + this.editorRef.current.scrollLeft,
+            y = (event.nativeEvent.pageY - this.clipContainerRef.current.offsetTop) + this.editorRef.current.scrollTop,
+            selection = {
+                x: Math.min(x, this.state.initial_selection.x),
+                y: Math.min(y, this.state.initial_selection.y),
+                width: Math.abs(x - this.state.initial_selection.x),
+                height: Math.abs(y - this.state.initial_selection.y)
+            },
+            tracks = this.store.state.tracks,
+            selection_start = pixels_to_seconds(selection.x, this.store.state.editorInfo.project_length, this.store.state.editorInfo.window_scale),
+            selection_end = pixels_to_seconds(selection.x + selection.width, this.store.state.editorInfo.project_length, this.store.state.editorInfo.window_scale),
+            track_height = this.clipSizingRef.offsetHeight,
+            first_track_idx = Math.min(Math.floor(selection.y / track_height), tracks.length - 1),
+            last_track_idx = Math.min(Math.floor((selection.y + selection.height) / track_height), tracks.length - 1),
+            track_selections: Array<Array<number>> = [];
+
+        for (let tidx = first_track_idx; tidx <= last_track_idx; tidx++) {
+            track_selections[tidx] = [];
+            tracks[tidx].clips.forEach((clip, idx) => {
+                if (clip.track_position + clip.length > selection_start && clip.track_position < selection_end) {
+                    track_selections[tidx].push(idx);
+                }
+            });
+        }
+
+        this.setState({
+            selection_window: selection
+        });
+        var editorInfoSelection = audioInterface.editorInfo.selection;
+        //editorInfoSelection.set_property({ track_selections });
+        editorInfoSelection.track_selections = track_selections;
+    }
+
+    selection_end(event) {
+        if (this.state.selection_window) {
+            log(audioInterface.editorInfo.selection.track_selections, this.state.selection_window,
+                pixels_to_seconds(this.state.selection_window.x, this.store.state.editorInfo.project_length, this.store.state.editorInfo.window_scale),
+                pixels_to_seconds(this.state.selection_window.x + this.state.selection_window.width, this.store.state.editorInfo.project_length, this.store.state.editorInfo.window_scale));
+            this.setState({
+                is_selecting: false,
+                initial_selection: null
+            });
+        }
+    }
+
     render() {
-        const tracks = this.store.state.tracks.map((track: AudioTrack) => {
-            const clips = track.clips.map((clip) => {
+        const tracks = this.store.state.tracks.map((track: AudioTrack, tidx) => {
+            const clips = track.clips.map((clip, cidx) => {
+                let is_selected = false;
+                if (audioInterface.editorInfo.selection.track_selections[tidx] &&
+                    audioInterface.editorInfo.selection.track_selections[tidx].includes(cidx)) {
+                    is_selected = true;
+                }
                 return (<Clip
                     key={clip.id}
                     clip={clip}
+                    parent_track={track}
                     editorInfo={audioInterface.editorInfo}
                     eventManager={this.events}
+                    is_selected={is_selected}
+                    selection_start={is_selected ? this.state.selection_window.x : null}
                 />);
             });
             return (<div key={track.id}
                 className="clip-editor-track"
+                ref={(el: HTMLDivElement) => { if (!this.clipSizingRef) this.clipSizingRef = el; }}
                 onDrop={evt => this.trackDropHandler(evt, track)}
                 onDragOver={evt => this.trackDragOverHandler(evt, track)}>
                 {clips}
@@ -117,16 +217,24 @@ export default class ClipEditor extends StoreComponent<AudioState> {
         var editorWidth = this.store.state.editorInfo.project_length * this.store.state.editorInfo.window_scale;
 
         const interaction = this.state.is_interacting ? <Interactable eventManager={this.events} mouseDownCallback={evt => this.mouseDown(evt)} mouseUpCallback={evt => this.mouseUp(evt)} mouseMoveCallback={evt => this.mouseMove(evt)} /> : null;
+        const selection = this.state.selection_window ? <div style={{ position: "absolute", border: "1px solid blue", left: this.state.selection_window.x, top: this.state.selection_window.y, width: this.state.selection_window.width, height: this.state.selection_window.height }}></div> : null;
 
         return (<div className="clip-editor"
             ref={this.editorRef}
+            onMouseDown={evt => this.selection_start(evt)}
+            onMouseMove={evt => this.selection_update(evt)}
+            onMouseUp={evt => this.selection_end(evt)}
             onDragOver={evt => this.dragOverHandler(evt)}
             onDrop={evt => this.dropHandler(evt)}>
             <MarkerViewport editor={this.editorRef} />
-            <div style={{ minWidth: '100%', width: editorWidth, position: 'relative' }}>
+            <div
+                style={{ minWidth: '100%', width: editorWidth, position: 'relative' }}
+                ref={this.clipContainerRef}>
                 {tracks}
+                {selection}
             </div>
             {interaction}
+
         </div>);
     }
 }

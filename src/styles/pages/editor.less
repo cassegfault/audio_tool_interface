@@ -1,26 +1,51 @@
 .editor-page {
+    max-height:100vh;
+    max-width:100vw;
+    width:100vw;
     height:100vh;
     overflow:hidden;
-}
 
-.editor-page .main-content {
-    display:flex;
-    align-content: stretch;
-    height:100%;
+    display:grid;
+    grid-template-columns: [left] 300px [sidebar-end]
+     auto [right];
+    grid-template-rows: [top] 20px [menubar] 41px [toolbar] auto [bottom];
+
+    .menubar {
+        grid-row: top / menubar;
+        grid-column: left / right;
+    }
+    .toolbar {
+        grid-row: menubar / toolbar;
+        grid-column: left / right;
+    }
+    .sidebar {
+        grid-row:toolbar / bottom;
+        grid-column: left / sidebar-end;
+    }
+    .track-editor {
+        grid-row: toolbar / bottom;
+        grid-column: sidebar-end / right;
+    }
 }
 
 .track-editor {
     background-color: #262728;
-    flex-grow:1;
+    max-height:100%;
+    overflow:hidden;
+    
+    display: grid;
+    grid-template-rows: [top] 24px [status] 24px [labels] auto [bottom];
+    grid-template-columns: [left] auto [right]
 }
 
 .track-editor-statusbar {
     background-color: #3A3B3C;
     border-bottom: 1px solid #1F2020;
-    height:24px;
     line-height:24px;
     display:flex;
     max-width:calc(100vw - 300px);
+    grid-row: top / status;
+    grid-column: left / right;
 }
 .statusbar-tools,
 .statusbar-timestamp,
@@ -61,9 +86,15 @@
     align-content: stretch;
 }
 
+.track-editor-label-container {
+    grid-row: status / label;
+    grid-column: left / right;
+}
+
 .track-editor-container {
-    height:100%;
-    overflow-y:scroll;
+    grid-row: label / bottom;
+    grid-column: left / right;
+    overflow:scroll;
 }
 
 .track-list {
@@ -79,19 +110,23 @@
     padding-left:10px;
     border-bottom:1px solid #1F2020;
 }
-
-.clip-editor {
+.clip-editor-scroll-container {
     width: 100%;
     height: 100%;
-    background-color: #262728;
     max-width: calc(100vw - 600px);
-    overflow-x: scroll;
+    position:relative;
+}
+.clip-editor {
+    background-color: #262728;
+    overflow-x:scroll;
+    overflow-y:hidden;
+    max-width:100%;
 }
 .clip-editor-track {
     position:relative;
     width:100%;
-    height:100px;
-    margin-top:2px;
+    border-color:transparent;
+    border-style:solid;
 }
 .clip-editor-label{
     border-bottom: 1px solid #1F2020;
@@ -111,16 +146,20 @@
     border-bottom-left-radius: 3px;
     border-style:solid;
     padding-left: 10px;
-    height: 100px;
-    margin-top:2px;
     margin-left:2px;
     border-right:none;
     border-top-color: #323232;
     border-bottom-color: #323232;
     
-    border-bottom-width:1px;
-    border-top-width:1px;
     background: linear-gradient(to top, #505050, 8%, #646464, 99%, #707070);
+}
+
+.clip-editor-track,
+.track-controls {
+    height: 100px;
+    margin-top: 2px;
+    border-top-width: 1px;
+    border-bottom-width:1px;
 }
 
 .track-clip {
@@ -128,6 +167,8 @@
     background-color:@brand-primary;
     height:100px;
     border-radius:3px;
+    padding:3px;
+    box-sizing:border-box;
 
     box-shadow: inset 0px 0px 6px rgba(0,0,0,0.9);
     background-image: linear-gradient(to top, rgba(0,0,0,0.3), 8%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.0) 100%);
@@ -140,12 +181,37 @@
     height:100px;
     cursor:col-resize;
 }
+
 .track-clip .right-interaction {
     position:absolute;
     right:-5px;
     width:10px;
     height:100px;
     cursor:col-resize;
+}
+
+.track-clip-canvas{
+    position:absolute;
+    top:0px;
+    left:0px;
+}
+
+.track-clip-meta {
+    white-space: nowrap;
+    word-break: keep-all;
+    overflow-x:hidden;
+    user-select: none;
+}
+
+.track-clip.selected {
+    border: 3px solid #35DDBE;
+    padding:0px;
+    opacity: 0.7;
+    height: 94px;
+    & .track-clip-canvas {
+        top:-3px;
+        left:-3px;
+    }
 }
 
 .interactable.active {

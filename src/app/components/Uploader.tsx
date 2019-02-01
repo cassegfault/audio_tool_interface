@@ -52,7 +52,6 @@ export class Uploader extends React.Component<object, UploaderState> {
 
             d.append(`file${i}`, file);
         }
-        console.log(d);
         /*Requests.post("decode",d, { responseType: "arraybuffer" }).then(({ response: arrayBuffer })=>{
             this.state.ctx.decodeAudioData(arrayBuffer, this.initAudio.bind(this));
         }).catch((xhr)=>{

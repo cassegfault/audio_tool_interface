@@ -22,7 +22,7 @@ export default class TrackEditor extends StoreComponent<AudioState> {
             };
             if (audioInterface.tracks.length === 1 &&
                 audioInterface.tracks[0].clips.length === 1) {
-                if (audioInterface.editorInfo.window_start === 0 && audioInterface.editorInfo.project_length === 0) {
+                if (audioInterface.editorInfo.project_length === 0) {
                     var editorInfo = audioInterface.editorInfo as Proxied<EditorInfo>;
                     editorInfo.set_property({ project_length: audioInterface.tracks[0].clips[0].length })
                 }
@@ -36,8 +36,6 @@ export default class TrackEditor extends StoreComponent<AudioState> {
     }
 
     render() {
-        console.log("Track Editor Render")
-
         return (<div className="track-editor">
             <StatusBar />
             <div className="track-editor-label-container">
@@ -51,7 +49,9 @@ export default class TrackEditor extends StoreComponent<AudioState> {
             </div>
             <div className="track-editor-container">
                 <TrackList tracks={this.store.state.tracks} editorInfo={this.state.editorInfo} />
-                <ClipEditor />
+                <div className="clip-editor-scroll-container">
+                    <ClipEditor />
+                </div>
             </div>
         </div>)
     }

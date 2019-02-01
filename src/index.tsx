@@ -4,11 +4,13 @@ import * as Sentry from '@sentry/browser';
 import router from "./routes";
 import AppContainer from "./AppContainer";
 import Requests from "requests";
+import { audioInterface } from "lib/AudioInterface";
 require('styles/index.less');
 declare global {
-    interface Window { 
-        _router: any; 
+    interface Window {
+        _router: any;
         _requests: any;
+        _audio_interface: any;
     }
 }
 
@@ -23,4 +25,5 @@ function build_app() {
 
 window._requests = Requests;
 window._router = router;
+window._audio_interface = audioInterface;
 window.addEventListener('load', build_app);

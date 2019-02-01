@@ -320,7 +320,6 @@ class AudioInterface {
             }
         }
 
-        console.log(outputData);
         let buffer = new ArrayBuffer(44 + outputData.length * 2);
         let view = new DataView(buffer),
             sample_rate = 48000;

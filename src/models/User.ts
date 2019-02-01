@@ -6,4 +6,9 @@ export default class User {
     email_address: string;
 
     projects: Array<Project> = [];
+
+    load(obj) {
+        this.id = obj.id || this.id;
+        this.email_address = obj.email_address || this.email_address;
+    }
 }

@@ -62,27 +62,45 @@ export default class MarkerViewport extends StoreComponent<AudioState, MarkerVie
                     ctx.beginPath();
 
                     var grouping = this.nearestPow10(this.pixels_to_seconds(700)),
+                        grouping_size = this.seconds_to_pixels(grouping),
                         precision_str = grouping + '',
                         precision_idx = precision_str.indexOf('.'),
+                        subdivisions = [],
                         idx;
 
                     if (precision_idx > -1) {
-                        let conv = Math.pow(10, precision_str.length - (precision_str.indexOf('.') + 1));
+                        let conv = Math.pow(10, precision_str.length - (precision_idx + 1));
                         idx = Math.round(start * conv) / conv;
                     } else {
-                        idx = Math.ceil(start);
+                        let conv = Math.pow(10, 1 - (precision_str.length));
+                        idx = Math.round(start * conv) / conv;
                     }
 
                     while (idx < Math.ceil(end)) {
                         var xpos = this.seconds_to_pixels(idx) - parent.scrollLeft;
+
                         ctx.moveTo(xpos, 0);
                         ctx.lineTo(xpos, canvas.height);
+
+                        // subdivisions can easily be configurable
+                        for (var sub = 1; sub <= 4; sub++) {
+                            subdivisions.push(xpos + ((grouping_size / 4) * sub));
+                        }
+
                         ctx.fillText(seconds_to_timestamp(idx), xpos + 10, 10);
 
                         idx += grouping;
                     }
-
                     ctx.stroke();
+
+                    ctx.globalAlpha = 0.1;
+                    ctx.beginPath();
+                    for (let x = 0; x < subdivisions.length; x++) {
+                        ctx.moveTo(subdivisions[x], 0);
+                        ctx.lineTo(subdivisions[x], canvas.height);
+                    }
+                    ctx.stroke();
+
                 }
                 ctx.restore();
             }
