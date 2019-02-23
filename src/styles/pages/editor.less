@@ -87,12 +87,12 @@
 }
 
 .track-editor-label-container {
-    grid-row: status / label;
+    grid-row: status / labels;
     grid-column: left / right;
 }
 
 .track-editor-container {
-    grid-row: label / bottom;
+    grid-row: labels / bottom;
     grid-column: left / right;
     overflow:scroll;
 }
@@ -133,6 +133,12 @@
     height: 24px;
     width:100%;
 }
+.clip-editor-selection {
+    position:absolute;
+    border:1px solid @brand-primary;
+    background-color: fade(lighten(@brand-primary, 10%), 30%);
+    border-radius:2px;
+}
 
 .interaction-layer {
     position:absolute;
@@ -160,6 +166,12 @@
     margin-top: 2px;
     border-top-width: 1px;
     border-bottom-width:1px;
+}
+
+.track-controls .track-controls-gain {
+    max-height: 80%;
+    width: 16px;
+    -webkit-appearance: slider-vertical;
 }
 
 .track-clip {
@@ -224,4 +236,6 @@
 
 .marker-viewport {
     position:absolute;
+    user-select: none;
+    pointer-events: none;
 }

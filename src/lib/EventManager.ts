@@ -8,7 +8,7 @@ type EventHandle = {
 
 export default class EventManager {
     // Maps cannot be used properly with bracket syntax, be careful!
-    queue: Map<string, Map<string, EventHandle> > = new Map();
+    queue: Map<string, Map<string, EventHandle>> = new Map();
 
     /** Calls _callback_ when event _e_ is fired and check_func returns true 
      * @param e The event identifier on which to callback
@@ -21,24 +21,23 @@ export default class EventManager {
         if (typeof this.queue.get(e) === "undefined")
             this.queue.set(e, new Map());
 
-        this.queue.get(e).set(guid, { callback, check_func });        
+        this.queue.get(e).set(guid, { callback, check_func });
         return guid;
     }
 
     off(e: string, guid: string) {
         if (!this.queue.has(e) || this.queue.get(e).has(guid))
             return
-        
+
         this.queue.get(e).delete(guid);
     }
-    
+
     fire(e: string, ...args: any[]) {
         if (!this.queue.has(e)) {
             return;
         }
-        
-        debug(`Firing ${e} with ${this.queue.get(e).size}`, this.queue.get(e), ...args);
 
+        //debug(`Firing ${e} with ${this.queue.get(e).size}`, this.queue.get(e), ...args);
         this.queue.get(e).forEach((handle: EventHandle) => {
             if (handle.check_func === undefined || handle.check_func(...args)) {
                 handle.callback(...args);

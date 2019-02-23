@@ -81,7 +81,12 @@ export default class EditorView extends React.Component<{ project_id: string }> 
                         return;
                     audioInterface.tracks[track_idx].removeClips(clips);
                 });
-
+            },
+            'ctrl+z': (e) => {
+                audioInterface.undo();
+            },
+            'ctrl+shift+z': (e) => {
+                audioInterface.redo();
             }
         })
     }
@@ -94,7 +99,7 @@ export default class EditorView extends React.Component<{ project_id: string }> 
         this.project_id = project_id;
         this.project_name = output.name;
         audioInterface.load(JSON.parse(output.project_data), project_id, output.name);
-        audioInterface.store.add_observer(["files.@each", "tracks.@each", ""], debounce(50, () => {
+        audioInterface.store.add_observer(["tracks.@each", "files.@each"], debounce(50, () => {
             debug("Saving Project");
             this.save_project();
         }));
@@ -105,6 +110,7 @@ export default class EditorView extends React.Component<{ project_id: string }> 
     }
 
     render(): React.ReactNode {
+        console.log("editor page rendered")
         if (this.state.is_loading) {
             return (<div className="page editor-page">Loading...</div>)
         }

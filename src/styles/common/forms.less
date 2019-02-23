@@ -12,6 +12,10 @@ input[type=range]{
     -webkit-appearance: none;
     width: 100%;
     background: transparent;
+
+    &.vertical {
+        width:auto;
+    }
 }
 
 input[type=range]:focus {
@@ -28,6 +32,10 @@ input[type=range]::-webkit-slider-thumb{
     cursor: pointer;
     margin-top: -7px;
 }
+input[type=range].vertical::-webkit-slider-thumb{
+    margin-top:0;
+    margin-left: -7px;
+}
 
 input[type=range]::-webkit-slider-runnable-track {
     width: 100%;
@@ -36,6 +44,10 @@ input[type=range]::-webkit-slider-runnable-track {
     background: #262728;
     border-radius: 6px;
     border: 0.2px solid #010101;
+}
+input[type=range].vertical::-webkit-slider-runnable-track {
+    width:4px;
+    height: 100%;
 }
 
 /*

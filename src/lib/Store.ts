@@ -1,5 +1,5 @@
 import EventManager from "lib/EventManager";
-import { isObj, deepCopy, isArray } from "utils/helpers";
+import { isObj, deepCopy, isArray, deep_diff } from "utils/helpers";
 import { warn, error, debug, log } from "utils/console";
 import { STATE_CHANGED } from "utils/symbols";
 
@@ -30,6 +30,7 @@ export default class Store<StoreType extends object> {
     history: Array<MutationHistory> = [];
     future: Array<MutationHistory> = [];
     currentHistoryBatch: Array<MutationHistory> = [];
+    copiedItem: any;
 
     constructor(params) {
         this.actions = params.actions || {};
@@ -39,6 +40,7 @@ export default class Store<StoreType extends object> {
                 path.forEach((part) => {
                     current = current[part];
                 });
+
                 Object.keys(value_object).forEach((key) => {
                     current[key] = value_object[key];
                 });
@@ -61,12 +63,22 @@ export default class Store<StoreType extends object> {
             type: "INIT_STATE",
             stateData: deepCopy(this._state)
         });
-        console.group("building state")
         this.state = this.proxy_by_path([]);
         this.update_state();
-        log("Final State", this.state);
-        console.groupEnd();
         this.events.fire(STATE_CHANGED, []);
+    }
+
+    /**
+     * Saves a reference point for creating a history object when did_update is called
+     * @param path path of the item to change
+     */
+    private history_checkpoint: any;
+    public will_update(path?: string[] | string) {
+        // build a deep copy of what is at path 
+        if (path && !isArray(path)) {
+            path = (<string>path).split(".");
+        }
+        this.history_checkpoint = deepCopy(this.get_value_by_path(path as string[]));
     }
 
     public did_update(path?: string[] | string) {
@@ -74,6 +86,33 @@ export default class Store<StoreType extends object> {
             path = (<string>path).split(".");
         }
         this.events.fire(STATE_CHANGED, path || []);
+        if (!this.history_checkpoint)
+            return;
+        // diff what is at path and what was at path and save that to history
+        var currentPath = path as string[],
+            diffObject = deep_diff(this.history_checkpoint, this.get_value_by_path(currentPath)),
+            state_diff = {},
+            build_tree = (obj, i = 0) => {
+                var current_value = {},
+                    key = currentPath[i],
+                    next = ++i < currentPath.length ? currentPath[i] : null;
+                if (next) {
+                    build_tree(current_value, i);
+                } else {
+                    // We are at the bottom of the path, place the diff object here
+                    current_value = diffObject;
+                }
+                obj[key] = current_value;
+            };
+        build_tree(diffObject);
+
+        // put it into history
+        this.currentHistoryBatch.push({
+            stateData: state_diff,
+            type: 'BatchedMutation'
+        });
+        this.commit_history_batch();
+        this.history_checkpoint = null;
     }
 
     /** Creates a proxy for the object held at the path relative to `_state`, provides access to that path through `obj.__store_path__`
@@ -117,7 +156,7 @@ export default class Store<StoreType extends object> {
                     break;
             }
         };
-        return new Proxy(this.get_object_by_path(path), {
+        return new Proxy(this.get_value_by_path(path), {
             get: proxy_get,
             set: proxy_set
         })
@@ -140,7 +179,7 @@ export default class Store<StoreType extends object> {
                 // Find the first item along the observed path that does not match the changed path
                 // Note: if the observed path is shorter, it will fire on any changes to changed children
                 var found_diff = check_path.find((prop, index) => {
-                    return check_path[index] !== '@each' && check_path[index] !== prop;
+                    return check_path[index] !== '@each' && check_path[index] !== changed_path[index];
                 });
 
                 return found_diff === undefined;
@@ -169,14 +208,11 @@ export default class Store<StoreType extends object> {
             throw "Calling undo with no history";
         }
         this.future.unshift(lastMutation); // Push our current state into the future
-        console.group('UNDO')
-        debug('previousMutation', previousMutation);
         this.is_silently_modifying = true;
-        this.state = Object.assign(this.state, deepCopy(previousMutation.stateData));
-        debug('assigned state', JSON.stringify(this.state));
-        debug('last stateData', previousMutation.stateData);
-        console.groupEnd();
+        this._state.load(deepCopy(previousMutation.stateData));
+        this.update_state();
         this.is_silently_modifying = false;
+        this.did_update([]);
     }
 
     /** Commits the last reverted action */
@@ -185,10 +221,12 @@ export default class Store<StoreType extends object> {
         if (!nextMutation) {
             throw "Calling redo with no future";
         }
-        this.is_silently_modifying = true;
         this.history.push(nextMutation);
-        this.state = Object.assign(this.state, deepCopy(nextMutation.stateData));
+        this.is_silently_modifying = true;
+        this._state.load(deepCopy(nextMutation.stateData));
+        this.update_state();
         this.is_silently_modifying = false;
+        this.did_update([]);
     }
 
     /** Calls an action `key` with paramater `payload` */
@@ -220,8 +258,14 @@ export default class Store<StoreType extends object> {
         this.mutations[key](params);
         this.update_state();
 
-        // Combine current mutation set
-        // It's possible this is better placed at the action level
+        if (!this.history_checkpoint)
+            this.commit_history_batch();
+
+        this.is_mutating = false;
+        return true;
+    }
+
+    commit_history_batch() {
         var mutation = deepCopy(this.state);
         this.currentHistoryBatch.forEach((mutationPiece) => {
             mutation = Object.assign(mutation, mutationPiece.stateData);
@@ -231,16 +275,12 @@ export default class Store<StoreType extends object> {
             stateData: mutation
         });
         this.currentHistoryBatch = [];
-
-
-        this.is_mutating = false;
-        return true;
     }
 
     /** Returns an object in the state located at the path array
      * @param path Array of strings representing a succession of children of `_state`
      */
-    get_object_by_path(path: string[]) {
+    get_value_by_path(path: string[]) {
         var current = this._state;
         path.forEach((part) => {
             current = current[part];
@@ -258,8 +298,6 @@ export default class Store<StoreType extends object> {
                         walk_state(obj[key]);
                         currentPath.pop();
                         if (!obj[key].__store_path__ && obj.propertyIsEnumerable(key)) {
-                            if (key === "selection")
-                                debugger;
                             // not a proxy
                             this.is_silently_modifying = true;
                             obj[key] = this.proxy_by_path([].concat(currentPath, [key]));

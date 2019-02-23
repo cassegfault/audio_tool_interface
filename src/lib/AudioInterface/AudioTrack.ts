@@ -8,6 +8,9 @@ export default class AudioTrack {
     public id: string;
     public name: string;
     public color: string;
+    public gain: number = 1;
+    public mute: boolean = false;
+    public solo: boolean = false;
     constructor({ id, name, color, clips }: { id?: string, name?: string, color?: string, clips?: Array<any> }) {
         this.id = id || make_guid();
         this.name = name;

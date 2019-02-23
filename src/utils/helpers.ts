@@ -143,6 +143,11 @@ export function extend(objA: any, objB: any): any {
     return out;
 }
 
+/**
+ * Waits for a period of calm before firing the function exactly once
+ * @param delay milliseconds of calm needed to fire
+ * @param fn function to fire
+ */
 export function debounce(delay: number, fn: Function) {
     var timer;
     return function debouncer(...args) {
@@ -168,4 +173,33 @@ export function nonenumerable(target: any, propertyKey: string) {
     descriptor.enumerable = false;
     descriptor.writable = true;
     Object.defineProperty(target, propertyKey, descriptor);
+}
+
+export function deep_diff(o1, o2) {
+    var key, subDiff,
+        diff = {};
+    for (key in o1) {
+        if (!o1.hasOwnProperty(key)) {
+        } else if (!isObj(o1[key]) || !isObj(o2[key])) {
+            if (!(key in o2) || o1[key] !== o2[key]) {
+                diff[key] = o2[key];
+            }
+        } else {
+            subDiff = deep_diff(o1[key], o2[key]);
+            if (!!subDiff) {
+                diff[key] = subDiff;
+            }
+        }
+    }
+    for (key in o2) {
+        if (o2.hasOwnProperty(key) && !(key in o1)) {
+            diff[key] = o2[key];
+        }
+    }
+    for (key in diff) {
+        if (diff.hasOwnProperty(key)) {
+            return diff;
+        }
+    }
+    return false;
 }

@@ -15,7 +15,9 @@ interface ClipEditorState {
     is_selecting: boolean,
     initial_selection: {
         x: number,
-        y: number
+        y: number,
+        pageX: number,
+        pageY: number
     },
     selection_window: {
         x: number,
@@ -26,7 +28,11 @@ interface ClipEditorState {
     interactionInfo: { callback: () => void; }
 }
 
-export default class ClipEditor extends StoreComponent<AudioState, {}, ClipEditorState> {
+interface ClipEditorProps {
+    scrollXContainer: React.RefObject<HTMLDivElement>,
+    scrollYContainer: React.RefObject<HTMLDivElement>
+}
+export default class ClipEditor extends StoreComponent<AudioState, ClipEditorProps, ClipEditorState> {
     state: ClipEditorState;
     events: EventManager = new EventManager();
     editorRef: React.RefObject<HTMLDivElement>;
@@ -34,7 +40,8 @@ export default class ClipEditor extends StoreComponent<AudioState, {}, ClipEdito
     clipSizingRef: HTMLDivElement;
     constructor(props) {
         super(audioInterface.store, props);
-        this.add_observer(["tracks.length", "tracks.@each.clips.length", "editorInfo.project_length", "editorInfo.window_scale"], () => { this.forceUpdate(); });
+        var clipEditorObserver = () => { console.log("Editor was forced to update"); this.buildTracks(); this.forceUpdate(); };
+        this.add_observer(["tracks.length", "tracks.@each.clips.length", "editorInfo.project_length", "editorInfo.window_scale"], clipEditorObserver);
         this.state = {
             is_interacting: false,
             is_selecting: false,
@@ -48,33 +55,10 @@ export default class ClipEditor extends StoreComponent<AudioState, {}, ClipEdito
         this.clipContainerRef = React.createRef<HTMLDivElement>();
     }
 
-    get interactions() {
-        var is_dragging = false,
-            startX = -1,
-            mouseStartX = -1;
-        return {
-            click(evt, clip) {
-
-            },
-            mouseDown(evt, clip: Proxied<AudioClip>) {
-                //log('mouseDown');
-                is_dragging = true;
-                mouseStartX = evt && evt.clientX;
-                startX = clip.track_position;
-            },
-            mouseUp(evt, clip: Proxied<AudioClip>) {
-                //log('mouseUp');
-                is_dragging = false;
-            },
-            mouseMove(evt, clip: Proxied<AudioClip>) {
-                //log('mouseMove');
-
-            }
-        }
-    }
-
     mouseDown(evt) { }
+
     mouseUp(evt) {
+        console.log("mouseup fired");
         this.events.fire('endDrag');
     }
     mouseMove(evt) {
@@ -121,14 +105,15 @@ export default class ClipEditor extends StoreComponent<AudioState, {}, ClipEdito
     }
 
     selection_start(event) {
-        var x = (event.nativeEvent.pageX - this.clipContainerRef.current.offsetLeft) + this.editorRef.current.scrollLeft,
-            y = (event.nativeEvent.pageY - this.clipContainerRef.current.offsetTop) + this.editorRef.current.scrollTop;
-        debug('start', x, y);
+        var x = (event.nativeEvent.pageX - this.props.scrollXContainer.current.offsetLeft) + this.editorRef.current.scrollLeft,
+            y = (event.nativeEvent.pageY - this.props.scrollXContainer.current.offsetTop) + this.props.scrollYContainer.current.scrollTop;
         this.setState({
             is_selecting: true,
             initial_selection: {
                 x,
-                y
+                y,
+                pageX: event.nativeEvent.pageX,
+                pageY: event.nativeEvent.pageY
             },
             selection_window: {
                 x,
@@ -143,8 +128,8 @@ export default class ClipEditor extends StoreComponent<AudioState, {}, ClipEdito
         if (!this.state.initial_selection)
             return;
 
-        var x = (event.nativeEvent.pageX - this.clipContainerRef.current.offsetLeft) + this.editorRef.current.scrollLeft,
-            y = (event.nativeEvent.pageY - this.clipContainerRef.current.offsetTop) + this.editorRef.current.scrollTop,
+        var x = (event.nativeEvent.pageX - this.props.scrollXContainer.current.offsetLeft) + this.editorRef.current.scrollLeft,
+            y = (event.nativeEvent.pageY - this.props.scrollXContainer.current.offsetTop) + this.props.scrollYContainer.current.scrollTop,
             selection = {
                 x: Math.min(x, this.state.initial_selection.x),
                 y: Math.min(y, this.state.initial_selection.y),
@@ -158,7 +143,6 @@ export default class ClipEditor extends StoreComponent<AudioState, {}, ClipEdito
             first_track_idx = Math.min(Math.floor(selection.y / track_height), tracks.length - 1),
             last_track_idx = Math.min(Math.floor((selection.y + selection.height) / track_height), tracks.length - 1),
             track_selections: Array<Array<number>> = [];
-
         for (let tidx = first_track_idx; tidx <= last_track_idx; tidx++) {
             track_selections[tidx] = [];
             tracks[tidx].clips.forEach((clip, idx) => {
@@ -172,24 +156,51 @@ export default class ClipEditor extends StoreComponent<AudioState, {}, ClipEdito
             selection_window: selection
         });
         var editorInfoSelection = audioInterface.editorInfo.selection;
-        //editorInfoSelection.set_property({ track_selections });
         editorInfoSelection.track_selections = track_selections;
     }
 
     selection_end(event) {
         if (this.state.selection_window) {
-            log(audioInterface.editorInfo.selection.track_selections, this.state.selection_window,
-                pixels_to_seconds(this.state.selection_window.x, this.store.state.editorInfo.project_length, this.store.state.editorInfo.window_scale),
-                pixels_to_seconds(this.state.selection_window.x + this.state.selection_window.width, this.store.state.editorInfo.project_length, this.store.state.editorInfo.window_scale));
+            var deltaX = Math.abs(event.nativeEvent.pageX - this.state.initial_selection.pageX),
+                deltaY = Math.abs(event.nativeEvent.pageY - this.state.initial_selection.pageY);
+            if (deltaX < 10 || deltaY < 10) {
+                audioInterface.editorInfo.selection.track_selections = [];
+                audioInterface.editorInfo.set_window({
+                    current_position: pixels_to_seconds((event.nativeEvent.pageX - this.props.scrollXContainer.current.offsetLeft) + this.editorRef.current.scrollLeft, audioInterface.editorInfo.project_length, audioInterface.editorInfo.window_scale)
+                });
+
+                this.setState({
+                    selection_window: null
+                });
+            }
+
             this.setState({
                 is_selecting: false,
                 initial_selection: null
             });
+            this.buildTracks();
         }
     }
 
-    render() {
-        const tracks = this.store.state.tracks.map((track: AudioTrack, tidx) => {
+    drag_callback(moved_clip, evt, delta) {
+        if (audioInterface.editorInfo.selection.track_selections.length > 0) {
+            audioInterface.editorInfo.selection.track_selections.forEach((clips, track_idx) => {
+                clips.forEach((clip_idx, clip_idx_idx) => {
+                    var clip = audioInterface.tracks[track_idx].clips[clip_idx];
+                    clip.set_property({
+                        track_position: Math.max(evt.initial_clip_data[track_idx][clip_idx_idx].track_position + delta, 0)
+                    });
+                })
+            })
+        } else {
+            moved_clip.set_property({
+                track_position: Math.max(evt.initial_clip_data.track_position + delta, 0)
+            });
+        }
+    }
+    tracks: any = null;
+    buildTracks() {
+        this.tracks = this.store.state.tracks.map((track: AudioTrack, tidx) => {
             const clips = track.clips.map((clip, cidx) => {
                 let is_selected = false;
                 if (audioInterface.editorInfo.selection.track_selections[tidx] &&
@@ -203,6 +214,7 @@ export default class ClipEditor extends StoreComponent<AudioState, {}, ClipEdito
                     editorInfo={audioInterface.editorInfo}
                     eventManager={this.events}
                     is_selected={is_selected}
+                    drag_callback={this.drag_callback}
                     selection_start={is_selected ? this.state.selection_window.x : null}
                 />);
             });
@@ -214,10 +226,27 @@ export default class ClipEditor extends StoreComponent<AudioState, {}, ClipEdito
                 {clips}
             </div>);
         });
+    }
+    render() {
+        console.log("editor rendered")
+        if (!this.tracks) {
+            this.buildTracks();
+        }
+        const tracks = this.tracks;
         var editorWidth = this.store.state.editorInfo.project_length * this.store.state.editorInfo.window_scale;
 
         const interaction = this.state.is_interacting ? <Interactable eventManager={this.events} mouseDownCallback={evt => this.mouseDown(evt)} mouseUpCallback={evt => this.mouseUp(evt)} mouseMoveCallback={evt => this.mouseMove(evt)} /> : null;
-        const selection = this.state.selection_window ? <div style={{ position: "absolute", border: "1px solid blue", left: this.state.selection_window.x, top: this.state.selection_window.y, width: this.state.selection_window.width, height: this.state.selection_window.height }}></div> : null;
+        const selection = this.state.selection_window && this.state.is_selecting ?
+            (<div
+                className="clip-editor-selection"
+                style={{
+                    left: this.state.selection_window.x,
+                    top: this.state.selection_window.y,
+                    width: this.state.selection_window.width,
+                    height: this.state.selection_window.height
+                }}
+            ></div>)
+            : null;
 
         return (<div className="clip-editor"
             ref={this.editorRef}

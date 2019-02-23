@@ -9,12 +9,16 @@ import EditorInfo from "lib/AudioInterface/EditorInfo";
 
 export default class TrackEditor extends StoreComponent<AudioState> {
     state: any;
+    clipEditorScrollXContainer: React.Ref<HTMLDivElement>;
+    clipEditorScrollYContainer: React.Ref<HTMLDivElement>;
     constructor(props) {
         super(audioInterface.store, props);
         this.state = {
             tracks: audioInterface.tracks,
             editorInfo: audioInterface.editorInfo
         }
+        this.clipEditorScrollXContainer = React.createRef();
+        this.clipEditorScrollYContainer = React.createRef();
         this.add_observer(["tracks.length", "tracks.@each.clips.length"], () => {
             var stateObj: any = {
                 tracks: audioInterface.tracks,
@@ -47,10 +51,12 @@ export default class TrackEditor extends StoreComponent<AudioState> {
                 </div>
                 <div className="clip-editor-label"></div>
             </div>
-            <div className="track-editor-container">
+            <div className="track-editor-container" ref={this.clipEditorScrollYContainer}>
                 <TrackList tracks={this.store.state.tracks} editorInfo={this.state.editorInfo} />
-                <div className="clip-editor-scroll-container">
-                    <ClipEditor />
+                <div className="clip-editor-scroll-container" ref={this.clipEditorScrollXContainer}>
+                    <ClipEditor
+                        scrollXContainer={this.clipEditorScrollXContainer as React.RefObject<HTMLDivElement>}
+                        scrollYContainer={this.clipEditorScrollYContainer as React.RefObject<HTMLDivElement>} />
                 </div>
             </div>
         </div>)

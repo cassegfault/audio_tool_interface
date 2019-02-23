@@ -13,7 +13,8 @@ export default class MarkerViewport extends StoreComponent<AudioState, MarkerVie
     editorEl: any;
     constructor(props: MarkerViewportProps) {
         super(audioInterface.store, props);
-        this.store.add_observer(["editorInfo.window_scale"], () => { this.forceUpdate() });
+        var markerViewportObserver = () => { this.forceUpdate() };
+        this.store.add_observer(["editorInfo.window_scale", "editorInfo.current_position"], markerViewportObserver);
     }
 
     componentDidUpdate() {

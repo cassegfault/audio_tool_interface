@@ -226,6 +226,7 @@ class AudioInterface {
     play() {
         this.tracks.forEach((track) => {
             var track_gain = new GainNode(this.ctx);
+            track_gain.gain.setValueAtTime(track.gain, 0);
             track.clips.forEach((clip) => {
                 var newNode = new AudioBufferSourceNode(this.ctx, { buffer: this.audioMap.get(clip.file_id) })
                 this._audio_nodes.push(newNode);
