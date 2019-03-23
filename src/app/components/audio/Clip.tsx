@@ -5,7 +5,7 @@ import EditorInfo from "lib/AudioInterface/EditorInfo";
 import Interactable from "../helpers/Interactable";
 import EventManager from "lib/EventManager";
 import StoreComponent from "lib/StoreComponent";
-import { AudioState } from "app/audio_store";
+import { StoreType } from "app/audio_store";
 import { deepCopy } from "utils/helpers";
 
 interface ClipProps {
@@ -17,7 +17,7 @@ interface ClipProps {
     parent_track: AudioTrack,
     drag_callback: (clip: any, evt: any, delta: number) => void;
 }
-export default class Clip extends StoreComponent<AudioState, ClipProps> {
+export default class Clip extends StoreComponent<StoreType, ClipProps> {
     state: any;
     parentEl: any;
     left_drag: boolean = false;

@@ -9,28 +9,49 @@ interface MutationHistory {
     stateData: object
 }
 
+type ActionFunction = (opts: {
+    commit: (key: string, payload: any) => void,
+    dispatch: (key: string, payload: any) => void,
+    payload: any
+}) => void;
 /** A set of actions to be dispatched by some Store */
 export interface ActionsMap {
-    [key: string]: (opts: { commit: (key: string, payload: any) => void, payload: any }) => void
+    [key: string]: ActionFunction;
 }
 
+type MutationFunction = (opts: {
+    state: any,
+    payload: any
+}) => void;
 /** A set of mutations to be committed on some Store */
 export interface MutationsMap {
-    [key: string]: (opts: { state: any, payload: any, makeProxy: Function }) => void
+    [key: string]: MutationFunction;
 }
 
-export default class Store<StoreType extends object> {
-    actions: Object;
-    mutations: Object;
-    state: StoreType; // Build an interface for this
-    private _state: any;
-    is_mutating: boolean = false;
-    is_silently_modifying: boolean = false;
-    events: EventManager;
-    history: Array<MutationHistory> = [];
-    future: Array<MutationHistory> = [];
-    currentHistoryBatch: Array<MutationHistory> = [];
-    copiedItem: any;
+type ActionsExtention = { set_property: ActionFunction; }
+type MutationsExtention = { set_property: MutationFunction; }
+
+type ExtendActions<T> = T & ActionsExtention;
+type ExtendMutations<T> = T & MutationsExtention;
+
+export default class Store<StoreType extends object, ActionsType extends ActionsMap, MutationsType extends MutationsMap> {
+    public readonly actions: ExtendActions<ActionsType>;
+    public readonly mutations: ExtendMutations<MutationsType>;
+
+    // Public read-only access to the accessor tree
+    public readonly state: Proxied<StoreType>;
+    // Accessor tree
+    private state_accessor: Proxied<StoreType>;
+    // Single point of truth, state tree
+    private internal_state: any;
+
+    private is_mutating: boolean = false;
+    private is_silently_modifying: boolean = false;
+    private events: EventManager;
+    private history: Array<MutationHistory> = [];
+    private future: Array<MutationHistory> = [];
+    private currentHistoryBatch: Array<MutationHistory> = [];
+    private copiedItem: any;
 
     constructor(params) {
         this.actions = params.actions || {};
@@ -49,21 +70,29 @@ export default class Store<StoreType extends object> {
 
         this.events = new EventManager();
         this.setup_state(params.state || {});
+
+        /** State is a readonly alias of state_accessor (which is internal) 
+         * This allows us to provide static checks against writing to state */
+        this.state = new Proxy(this.state_accessor, {
+            get(target, prop, receiver) {
+                return Reflect.get(target, prop, receiver);
+            }
+        });
     }
 
     public setup_state(new_state: StoreType) {
-        if (this._state) {
-            this._state.load(new_state);
+        if (this.internal_state) {
+            this.internal_state.load(new_state);
         } else {
-            this._state = new_state;
+            this.internal_state = new_state;
         }
         this.history = [];
         this.future = [];
         this.history.push({
             type: "INIT_STATE",
-            stateData: deepCopy(this._state)
+            stateData: deepCopy(this.internal_state)
         });
-        this.state = this.proxy_by_path([]);
+        this.state_accessor = this.proxy_by_path([]);
         this.update_state();
         this.events.fire(STATE_CHANGED, []);
     }
@@ -139,9 +168,6 @@ export default class Store<StoreType extends object> {
             return true;
         };
         var proxy_get = (target, property, receiver) => {
-            if (property === '__store_path__') {
-                return path.join('.');
-            }
             switch (property) {
                 case '__store_path__':
                     return path.join('.');
@@ -201,7 +227,7 @@ export default class Store<StoreType extends object> {
     // Undo / Redo currently is a very heavy implementation currently
     // this needs to be rethought for module support
     /** Reverts the most recent action */
-    undo() {
+    public undo() {
         var lastMutation = this.history.pop(),// This is the mutation that brings us to our current state
             previousMutation = this.history.length > 0 ? this.history[this.history.length - 1] : null;
         if (!previousMutation) {
@@ -209,28 +235,28 @@ export default class Store<StoreType extends object> {
         }
         this.future.unshift(lastMutation); // Push our current state into the future
         this.is_silently_modifying = true;
-        this._state.load(deepCopy(previousMutation.stateData));
+        this.internal_state.load(deepCopy(previousMutation.stateData));
         this.update_state();
         this.is_silently_modifying = false;
         this.did_update([]);
     }
 
     /** Commits the last reverted action */
-    redo() {
+    public redo() {
         var nextMutation = this.future.shift();
         if (!nextMutation) {
             throw "Calling redo with no future";
         }
         this.history.push(nextMutation);
         this.is_silently_modifying = true;
-        this._state.load(deepCopy(nextMutation.stateData));
+        this.internal_state.load(deepCopy(nextMutation.stateData));
         this.update_state();
         this.is_silently_modifying = false;
         this.did_update([]);
     }
 
     /** Calls an action `key` with paramater `payload` */
-    dispatch(key: string, payload?: any) {
+    public dispatch<K extends Extract<keyof ExtendActions<ActionsType>, string>>(key: K, payload?: any) {
         if (!this.actions[key]) {
             error(`Action dispatched that does not exist: ${key}`);
             return;
@@ -243,16 +269,11 @@ export default class Store<StoreType extends object> {
     }
 
     /** Calls an mutation `key` with paramater `payload`, should only be called from actions */
-    commit(key: string, payload?: any) {
-        if (typeof this.mutations[key] !== 'function') {
-            error(`Mutation committed that does not exist: ${key}`);
-            return false;
-        }
-
+    public commit<K extends Extract<keyof ExtendMutations<MutationsType>, string>>(key: K, payload?: any) {
         this.is_mutating = true;
 
         var params = {
-            state: this.state,
+            state: this.state_accessor,
             payload
         };
         this.mutations[key](params);
@@ -265,8 +286,8 @@ export default class Store<StoreType extends object> {
         return true;
     }
 
-    commit_history_batch() {
-        var mutation = deepCopy(this.state);
+    private commit_history_batch() {
+        var mutation = deepCopy(this.state_accessor);
         this.currentHistoryBatch.forEach((mutationPiece) => {
             mutation = Object.assign(mutation, mutationPiece.stateData);
         });
@@ -280,8 +301,8 @@ export default class Store<StoreType extends object> {
     /** Returns an object in the state located at the path array
      * @param path Array of strings representing a succession of children of `_state`
      */
-    get_value_by_path(path: string[]) {
-        var current = this._state;
+    public get_value_by_path(path: string[]) {
+        var current = this.internal_state;
         path.forEach((part) => {
             current = current[part];
         });
@@ -289,7 +310,7 @@ export default class Store<StoreType extends object> {
     }
 
     /** Updates all objects in the state to be proxies and be accessible by path */
-    update_state() {
+    private update_state() {
         var currentPath = [],
             walk_state = (obj) => {
                 Object.keys(obj).forEach((key) => {
@@ -306,6 +327,6 @@ export default class Store<StoreType extends object> {
                     }
                 });
             }
-        walk_state(this.state);
+        walk_state(this.state_accessor);
     }
 }

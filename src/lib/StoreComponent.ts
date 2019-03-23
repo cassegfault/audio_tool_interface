@@ -4,10 +4,10 @@ import Store from "./Store";
 /** Class for components who make use of some Store
  * Requires `_store` be passed in the constructor and `super.componentWillUnmount` to be called in `componentWillUnmount` if it is overridden
  */
-export default class StoreComponent<StoreType extends object, P = {}, S = {}> extends React.Component<P, S> {
+export default class StoreComponent<StoreType extends Store<{}, {}, {}>, P = {}, S = {}> extends React.Component<P, S> {
     private _observers: string[] = [];
-    private _store: Store<StoreType>;
-    constructor(store: Store<StoreType>, props) {
+    private _store: StoreType;
+    constructor(store: StoreType, props) {
         super(props);
         this._store = store;
     }

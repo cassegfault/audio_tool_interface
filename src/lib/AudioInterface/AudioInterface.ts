@@ -1,7 +1,7 @@
 import { make_guid, extend } from "utils/helpers";
 import { error, log, debug, warn } from "utils/console";
 import Store from "../Store";
-import audio_store, { AudioState } from "app/audio_store";
+import audio_store, { StoreType, AudioState } from "app/audio_store";
 import AudioTrack from "./AudioTrack";
 import EditorInfo from "./EditorInfo";
 import Requests from "requests";
@@ -39,7 +39,7 @@ class AudioInterface {
     }
     //-!
 
-    store: Store<AudioState> = audio_store;
+    store: StoreType = audio_store;
     current_project_id: string;
     current_project_name: string;
 

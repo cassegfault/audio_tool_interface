@@ -1,9 +1,9 @@
 import * as React from "react";
 import { AudioTrack, AudioClip, audioInterface } from "lib/AudioInterface";
 import StoreComponent from "lib/StoreComponent";
-import { AudioState } from "app/audio_store";
+import { StoreType } from "app/audio_store";
 
-export default class TrackControls extends StoreComponent<AudioState, { track: AudioTrack, editorInfo: any }> {
+export default class TrackControls extends StoreComponent<StoreType, { track: Proxied<AudioTrack>, editorInfo: any }> {
     gain_input: HTMLInputElement;
     solo_input: HTMLInputElement;
     mute_input: HTMLInputElement;
@@ -16,22 +16,19 @@ export default class TrackControls extends StoreComponent<AudioState, { track: A
     }
 
     set_gain() {
-        var track = this.props.track as Proxied<AudioTrack>;
-        track.set_property({
+        this.props.track.set_property({
             gain: this.gain_input.value
         });
     }
 
     set_solo() {
-        var track = this.props.track as Proxied<AudioTrack>;
-        track.set_property({
+        this.props.track.set_property({
             solo: this.solo_input.value
         });
     }
 
     set_mute() {
-        var track = this.props.track as Proxied<AudioTrack>;
-        track.set_property({
+        this.props.track.set_property({
             mute: this.mute_input.value
         });
     }
