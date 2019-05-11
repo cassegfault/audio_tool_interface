@@ -20,7 +20,7 @@ module.exports = {
         extensions: [".ts", ".tsx", ".js", ".json", '.less'],
         alias: {
             lib: srcPath('lib'),
-            requests: srcPath('lib/requests'),
+            requests: srcPath('lib/Requests'),
             common: srcPath('lib/common'),
             utils: srcPath('utils'),
             actions: srcPath('actions'),
@@ -44,10 +44,11 @@ module.exports = {
             test: /\.less$/,
             use: [MiniCssExtractPlugin.loader,
                 'css-loader',
-            {
-                loader: 'less-loader',
-                options: { sourceMap: true }
-            }]
+                {
+                    loader: 'less-loader',
+                    options: { sourceMap: true }
+                }
+            ]
         }]
     },
 
