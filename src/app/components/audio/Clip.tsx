@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Proxied } from "ts-quickstore";
 import { AudioTrack, AudioClip, audioInterface } from "lib/AudioInterface";
 import { debug, log } from "utils/console";
 import EditorInfo from "lib/AudioInterface/EditorInfo";
@@ -37,10 +38,9 @@ export default class Clip extends StoreComponent<StoreType, ClipProps> {
         this.props.eventManager.on('endDrag', this.release.bind(this));
         var fileIndex = audioInterface.files.findIndex(file => file.id === this.props.clip.file_id);
         var clipObserver = () => {
-            console.log("forced update");
             this.forceUpdate()
         };
-        this.store.add_observer([`files.${fileIndex}`, props.clip.__store_path__], clipObserver);
+        this.store.add_observer([`files.${fileIndex}`, 'editorInfo.window_scale', props.clip.__store_path__], clipObserver);
     }
 
     componentDidMount() {
@@ -181,11 +181,9 @@ export default class Clip extends StoreComponent<StoreType, ClipProps> {
                 }
             });
         }
-        log("did draw", start_idx, end_idx);
     }
 
     render() {
-        console.log("clip render");
         var clip = this.props.clip,
             editorInfo = this.props.editorInfo;
 

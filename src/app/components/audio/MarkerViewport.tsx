@@ -1,6 +1,6 @@
 import * as React from "react";
 import StoreComponent from "lib/StoreComponent";
-import { AudioState } from "app/audio_store";
+import { StoreType } from "app/audio_store";
 import { audioInterface } from "lib/AudioInterface";
 import { seconds_to_timestamp } from "utils/helpers";
 
@@ -8,7 +8,7 @@ interface MarkerViewportProps {
     editor: React.RefObject<HTMLDivElement>
 }
 
-export default class MarkerViewport extends StoreComponent<AudioState, MarkerViewportProps> {
+export default class MarkerViewport extends StoreComponent<StoreType, MarkerViewportProps> {
     ctx: CanvasRenderingContext2D;
     editorEl: any;
     constructor(props: MarkerViewportProps) {

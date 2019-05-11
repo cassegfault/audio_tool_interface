@@ -1,4 +1,4 @@
-import Store from "lib/store";
+import { Store } from "ts-quickstore";
 import actions from "app/app_store/actions";
 import state from "app/app_store/initial_state";
 import mutations from "app/app_store/mutations";
@@ -8,13 +8,13 @@ declare global {
     }
 }
 type AppState = typeof state;
-type ActTypes = typeof actions;
-type MutTypes = typeof mutations;
-type StoreType = Store<AppState, ActTypes, MutTypes>;
-var app_store = new Store<AppState, ActTypes, MutTypes>({
+type ActionTypes = typeof actions;
+type MutationTypes = typeof mutations;
+type StoreType = Store<AppState, ActionTypes, MutationTypes>;
+const app_store: StoreType = new Store<AppState, ActionTypes, MutationTypes>({
     actions,
     mutations,
     state
 });
 window.app_store = app_store;
-export { app_store, StoreType }
+export { app_store, AppState, ActionTypes, MutationTypes, StoreType }

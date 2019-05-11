@@ -1,7 +1,8 @@
 import Requests from "requests";
+import { ActionsMap } from "ts-quickstore";
 import { SESSION_TOKEN_KEY } from "utils/symbols";
 
-export default {
+export default <ActionsMap>{
     set_session_token({ commit, payload: session_token }) {
         window.localStorage.setItem(SESSION_TOKEN_KEY, session_token);
         commit('set_user', { session_token });

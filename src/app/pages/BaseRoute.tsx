@@ -1,8 +1,5 @@
 import * as React from "react";
-import { app_store } from "app/app_store/index";
-import Store from "lib/Store";
-import Requests from "requests";
-import { debug } from "utils/console";
+import { app_store, StoreType } from "app/app_store/index";
 import { SESSION_TOKEN_KEY } from "utils/symbols";
 
 // This interface will merge with the abstract class definition below
@@ -33,7 +30,7 @@ abstract class BaseRoute {
         return this._instance;
     }
     //-!
-    store: Store<any> = app_store;
+    store: StoreType = app_store;
     abstract view: React.Component;
     abstract render(): React.ReactNode;
 }

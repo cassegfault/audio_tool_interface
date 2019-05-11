@@ -1,7 +1,7 @@
 import { make_guid, extend } from "utils/helpers";
 import { error, log, debug, warn } from "utils/console";
-import Store from "../Store";
-import audio_store, { StoreType, AudioState } from "app/audio_store";
+import { Proxied } from "ts-quickstore";
+import { audio_store, StoreType, AudioState } from "app/audio_store";
 import AudioTrack from "./AudioTrack";
 import EditorInfo from "./EditorInfo";
 import Requests from "requests";
@@ -48,7 +48,7 @@ class AudioInterface {
 
     processing_files: AudioFile[] = [];
 
-    public get files(): AudioFile[] {
+    public get files(): Proxied<AudioFile[]> {
         return this.store.state.files;
     }
 
@@ -56,11 +56,11 @@ class AudioInterface {
         return this.audioMap.get(file_id);
     }
 
-    public get tracks(): AudioTrack[] {
+    public get tracks(): Proxied<AudioTrack[]> {
         return this.store.state.tracks;
     }
 
-    public get editorInfo(): EditorInfo {
+    public get editorInfo(): Proxied<EditorInfo> {
         return this.store.state.editorInfo;
     }
 

@@ -1,7 +1,8 @@
 import * as React from "react";
+import { Proxied } from "ts-quickstore";
 import StoreComponent from "lib/StoreComponent";
 import { audioInterface, AudioClip, AudioTrack } from "lib/AudioInterface";
-import { AudioState } from "app/audio_store";
+import { audio_store, StoreType } from "app/audio_store";
 import Clip from "./Clip";
 import { log, debug } from "utils/console";
 import Interactable from "../helpers/Interactable";
@@ -32,7 +33,7 @@ interface ClipEditorProps {
     scrollXContainer: React.RefObject<HTMLDivElement>,
     scrollYContainer: React.RefObject<HTMLDivElement>
 }
-export default class ClipEditor extends StoreComponent<AudioState, ClipEditorProps, ClipEditorState> {
+export default class ClipEditor extends StoreComponent<StoreType, ClipEditorProps, ClipEditorState> {
     state: ClipEditorState;
     events: EventManager = new EventManager();
     editorRef: React.RefObject<HTMLDivElement>;
@@ -156,7 +157,7 @@ export default class ClipEditor extends StoreComponent<AudioState, ClipEditorPro
             selection_window: selection
         });
         var editorInfoSelection = audioInterface.editorInfo.selection;
-        editorInfoSelection.track_selections = track_selections;
+        editorInfoSelection.track_selections.set_property(track_selections);
     }
 
     selection_end(event) {
@@ -164,7 +165,7 @@ export default class ClipEditor extends StoreComponent<AudioState, ClipEditorPro
             var deltaX = Math.abs(event.nativeEvent.pageX - this.state.initial_selection.pageX),
                 deltaY = Math.abs(event.nativeEvent.pageY - this.state.initial_selection.pageY);
             if (deltaX < 10 || deltaY < 10) {
-                audioInterface.editorInfo.selection.track_selections = [];
+                audioInterface.editorInfo.selection.track_selections.set_property([]);
                 audioInterface.editorInfo.set_window({
                     current_position: pixels_to_seconds((event.nativeEvent.pageX - this.props.scrollXContainer.current.offsetLeft) + this.editorRef.current.scrollLeft, audioInterface.editorInfo.project_length, audioInterface.editorInfo.window_scale)
                 });
@@ -200,8 +201,8 @@ export default class ClipEditor extends StoreComponent<AudioState, ClipEditorPro
     }
     tracks: any = null;
     buildTracks() {
-        this.tracks = this.store.state.tracks.map((track: AudioTrack, tidx) => {
-            const clips = track.clips.map((clip, cidx) => {
+        this.tracks = this.store.state.tracks.map((track: Proxied<AudioTrack>, tidx) => {
+            const clips = track.clips.map((clip: Proxied<AudioClip>, cidx) => {
                 let is_selected = false;
                 if (audioInterface.editorInfo.selection.track_selections[tidx] &&
                     audioInterface.editorInfo.selection.track_selections[tidx].includes(cidx)) {

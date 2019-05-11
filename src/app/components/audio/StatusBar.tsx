@@ -13,7 +13,7 @@ export default class StatusBar extends React.Component {
         })
     }
     set_window_range() {
-        var editorInfo = audioInterface.store.state.editorInfo as Proxied<EditorInfo>;
+        var editorInfo = audioInterface.store.state.editorInfo;
 
         editorInfo.set_property({
             window_scale: parseFloat(this.scale_input.value)

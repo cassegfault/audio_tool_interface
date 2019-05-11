@@ -1,7 +1,9 @@
 import { extend } from "utils/helpers";
 import { debug } from "utils/console";
-export default {
-    set_user({ state, payload: { session_token, email_address, id } }){
+import { MutationsMap } from "ts-quickstore";
+
+export default <MutationsMap>{
+    set_user({ state, payload: { session_token, email_address, id } }) {
         debug("Set user");
         /*state.user = extend(state.user, {
             session_token,

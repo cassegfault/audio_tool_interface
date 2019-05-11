@@ -3,7 +3,7 @@ import Requests from "requests";
 import { error, debug } from "utils/console";
 import { audioInterface, AudioTrack } from "lib/AudioInterface";
 import { samples_to_timestamp, deepCopy } from "utils/helpers";
-import { AudioState } from "app/audio_store";
+import { StoreType } from "app/audio_store";
 import StoreComponent from "lib/StoreComponent";
 
 class FileItem extends React.Component<{ file: AudioFile }, { show_settings: boolean, is_renaming: boolean }> {
@@ -75,7 +75,7 @@ class FileItem extends React.Component<{ file: AudioFile }, { show_settings: boo
         </li>);
     }
 }
-export default class Files extends StoreComponent<AudioState> {
+export default class Files extends StoreComponent<StoreType> {
     state: any;
     upload_input: HTMLElement;
     constructor(props) {

@@ -2,8 +2,8 @@ import { AudioTrack } from "lib/AudioInterface";
 import EditorInfo from "lib/AudioInterface/EditorInfo";
 
 export default {
-    files: <Array<Proxied<AudioFile>>>([]),
-    tracks: <Array<Proxied<AudioTrack>>>([]),
+    files: <Array<AudioFile>>([]),
+    tracks: <Array<AudioTrack>>([]),
     editorInfo: new EditorInfo(),
 
     load(obj) {

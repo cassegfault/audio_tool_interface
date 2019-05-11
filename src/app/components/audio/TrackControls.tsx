@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Proxied } from "ts-quickstore";
 import { AudioTrack, AudioClip, audioInterface } from "lib/AudioInterface";
 import StoreComponent from "lib/StoreComponent";
 import { StoreType } from "app/audio_store";

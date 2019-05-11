@@ -1,4 +1,4 @@
-import { MutationsMap } from "lib/Store";
+import { MutationsMap } from "ts-quickstore";
 import { warn } from "utils/console";
 import { AudioTrack, AudioClip } from "lib/AudioInterface";
 import { make_guid } from "utils/helpers";
@@ -42,7 +42,7 @@ export default <MutationsMap>{
         if (!foundTrack) {
             return warn(`Could not find track: ${track_id}`);
         }
-        foundTrack.clips.push(<Proxied<AudioClip>>(new AudioClip({ file_id })));
+        foundTrack.clips.push(new AudioClip({ file_id }));
     },
     set_window({ state, payload }) {
         Object.keys(payload).forEach((key) => {

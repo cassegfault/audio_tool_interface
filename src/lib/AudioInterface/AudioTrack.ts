@@ -4,7 +4,7 @@ import { make_guid } from "utils/helpers";
 
 
 export default class AudioTrack {
-    public clips: Array<Proxied<AudioClip>> = [];
+    public clips: Array<AudioClip> = [];
     public id: string;
     public name: string;
     public color: string;
@@ -17,7 +17,7 @@ export default class AudioTrack {
         this.color = color;
         if (clips) {
             this.clips = clips.map((clipObj) => {
-                return new AudioClip(clipObj) as Proxied<AudioClip>;
+                return new AudioClip(clipObj);
             });
         }
     }

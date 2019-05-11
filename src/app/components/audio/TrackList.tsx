@@ -1,8 +1,9 @@
 import * as React from "react";
+import { Proxied } from "ts-quickstore";
 import { audioInterface, AudioTrack } from "lib/AudioInterface";
 import TrackControls from "./TrackControls";
 
-export default class TrackList extends React.Component<{ tracks: Proxied<AudioTrack>[], editorInfo: any }> {
+export default class TrackList extends React.Component<{ tracks: Proxied<AudioTrack[]>, editorInfo: any }> {
     constructor(props) {
         super(props);
     }

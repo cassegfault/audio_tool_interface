@@ -1,4 +1,4 @@
-import { ActionsMap } from "lib/Store";
+import { ActionsMap } from "ts-quickstore";
 export default <ActionsMap>{
     addFile({ commit, payload }) {
         commit('addFile', payload);

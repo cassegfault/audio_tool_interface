@@ -1,5 +1,5 @@
-import Store from "lib/Store"
-import { app_store, AppState } from "app/app_store";
+import { Proxied } from "ts-quickstore";
+import { app_store, StoreType } from "app/app_store";
 import User from "models/User";
 import { warn } from "utils/console";
 import { isString, isNumber } from "utils/helpers";
@@ -7,7 +7,6 @@ import Requests from "requests";
 import Project from "models/Project";
 
 enum LocalStorageType { local = "local", session = "session" }
-
 class SessionClass {
     //!- singleton logic
     private static _instance: SessionClass = new SessionClass();
@@ -23,11 +22,11 @@ class SessionClass {
         return SessionClass._instance;
     }
     //-!
-    get store(): Store<AppState> {
+    get store(): StoreType {
         return app_store;
     }
     get user(): Proxied<User> {
-        return <Proxied<User>>this.store.state.user;
+        return this.store.state.user;
     }
     async get_projects() {
         var { output, error_message } = await Requests.get("projects");

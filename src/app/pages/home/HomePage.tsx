@@ -8,7 +8,7 @@ export default class HomeView extends React.Component {
     constructor(props) {
         super(props);
         this.state = { email_address: '' };
-        Session.store.add_observer(['user.email_address', 'user.projects.length'], () => {
+        Session.store.add_observer(['user.email_address', 'user.projects', 'user.projects.length'], () => {
             this.forceUpdate();
         });
         Session.get_projects();

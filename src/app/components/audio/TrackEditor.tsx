@@ -2,12 +2,12 @@ import * as React from "react";
 import TrackList from "./TrackList";
 import { audioInterface } from "lib/AudioInterface";
 import StoreComponent from "lib/StoreComponent";
-import { AudioState } from "app/audio_store";
+import { StoreType } from "app/audio_store";
 import StatusBar from "app/components/audio/StatusBar";
 import ClipEditor from "app/components/audio/ClipEditor";
 import EditorInfo from "lib/AudioInterface/EditorInfo";
 
-export default class TrackEditor extends StoreComponent<AudioState> {
+export default class TrackEditor extends StoreComponent<StoreType> {
     state: any;
     clipEditorScrollXContainer: React.Ref<HTMLDivElement>;
     clipEditorScrollYContainer: React.Ref<HTMLDivElement>;
@@ -27,7 +27,7 @@ export default class TrackEditor extends StoreComponent<AudioState> {
             if (audioInterface.tracks.length === 1 &&
                 audioInterface.tracks[0].clips.length === 1) {
                 if (audioInterface.editorInfo.project_length === 0) {
-                    var editorInfo = audioInterface.editorInfo as Proxied<EditorInfo>;
+                    var editorInfo = audioInterface.editorInfo;
                     editorInfo.set_property({ project_length: audioInterface.tracks[0].clips[0].length })
                 }
             }

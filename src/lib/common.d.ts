@@ -12,17 +12,6 @@ declare interface AudioFile {
     file?: AudioFileProperites;
 }
 
-/** Provides the additional properties built in to the proxy traps. For properties proxied in the state object */
-type _ProxyProps<T> = T & {
-    readonly __store_path__: string;
-    set_property: (value_object: object) => void;
-}
-
-/** Proxied items are proxied all the way down the tree */
-declare type Proxied<T> = _ProxyProps<T> & {
-    readonly [P in keyof T]: Proxied<T[P]>;
-}
-
 declare interface EditorSelection {
     time_start: number,
     time_end: number,

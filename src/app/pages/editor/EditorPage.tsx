@@ -5,7 +5,7 @@ import Toolbar from "app/components/sections/Toolbar";
 import Menubar, { MenuItem } from "app/components/sections/Menubar";
 import { audioInterface } from "lib/AudioInterface";
 import Requests from "requests";
-import audio_store from "app/audio_store";
+import { audio_store } from "app/audio_store";
 import { debounce } from "utils/helpers";
 import { hotkeys } from "lib/HotkeyManager";
 import { debug } from "utils/console";
