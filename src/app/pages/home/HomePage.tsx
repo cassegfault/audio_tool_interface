@@ -1,7 +1,9 @@
 import * as React from "react";
 import Link from "app/components/helpers/Link";
+import Requests from "requests";
 import { Session } from "lib/Session";
 import router from "routes";
+import { error } from "utils/console";
 
 export default class HomeView extends React.Component {
     state: any;
@@ -14,9 +16,16 @@ export default class HomeView extends React.Component {
         Session.get_projects();
     }
 
-    newProject() {
-
+    async newProject() {
+        var { output, error_message } = await Requests.put("project", { name: 'New Project', creator_id: Session.user.id });
+        if (error_message || !output.guid) {
+            error(`Could not create project: ${error_message}`, output);
+            return Promise.reject(error_message);
+        }
+        this.loadProject(output.guid);
+        Promise.resolve();
     }
+
     loadProject(guid: string) {
         router.navigate(`/projects/${guid}`);
     }
